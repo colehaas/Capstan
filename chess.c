@@ -3,8 +3,10 @@
  * =========================================== *
 
 
-              CHESS ENGINE V0
-                 by 16haas
+                   CAPSTAN
+
+                a chess engine
+                  by 16haas
 
  * =========================================== *
 \***********************************************/
@@ -14,6 +16,7 @@
 
 //system headers
 #include <stdio.h>
+#include <math.h>
 
 //define bitboard datatype
 #define U64 unsigned long long
@@ -33,18 +36,18 @@ enum {
   a8, b8, c8, d8, e8, f8, g8, h8
 };
 
-//color
+//colors & pieces
 enum {
-  white, black
+  white, black, pawn, horse, king, queen, rook, bishop
 };
 
 enum {
   N, NE, E, SE, S, SW, W, NW
 };
 
+//board representation
 
-
-
+U64 boards[8];
 
 //useful bitboards
 
@@ -68,7 +71,7 @@ U64 not_ab() {return ~(a_file | b_file);}
 U64 not_gh() {return ~(g_file | h_file);}
 
 /***********************************************\
- * =========================================== *
+ * ===========================================*
                 Bit Manipulations
  * =========================================== *
 \***********************************************/
@@ -77,6 +80,48 @@ U64 not_gh() {return ~(g_file | h_file);}
 #define set_bit(bb, sq) (bb |= (1ULL << sq))
 #define get_bit(bb, sq) (bb & (1ULL << sq))
 #define pop_bit(bb, sq) (get_bit(bb, sq) ? bb ^= (1ULL << sq) : 0)
+
+void move_piece(int color, int piece, int sq, int target_sq) {
+  pop_bit(boards[color], sq);
+  pop_bit(boards[piece], sq);
+  set_bit(boards[color], target_sq);
+  set_bit(boards[piece], target_sq);
+}
+
+int pop_count(U64 bb) {
+  int count = 0;
+  while (bb) {
+    count++;
+    bb &= bb - 1;
+  }
+  return count;
+}
+
+int bit_scan_forward(U64 bb) {
+  if (bb) return pop_count((bb & -bb) - 1);
+  else return -1;
+}
+
+int bit_scan_reverse(U64 bb) {
+  
+  bb |= bb >> 1;
+  bb |= bb >> 2;
+  bb |= bb >> 4;
+  bb |= bb >> 8;
+  bb |= bb >> 16;
+  bb |= bb >> 32;
+
+  bb+=1;
+  bb = bb >> 1;
+
+  return bit_scan_forward(bb);
+
+}
+
+int get_opposite(int color) {
+  if (color == white ) return black;
+  else return white;
+}
 
 //print bitboard
 void printbb(U64 bb) {
@@ -92,8 +137,22 @@ void printbb(U64 bb) {
   }
   printf("\n    a  b  c  d  e  f  g  h\n\n");
   printf("    bitboard: %llX\n\n", bb);
+
+  int lsb = bit_scan_forward(bb);
+  int msb = bit_scan_reverse(bb);
+
+  printf("    lsb index: %d\n\n", lsb);
+  printf("    msb index: %d\n\n", msb);
+
   }
 
+U64 get_bb(int color, int piece) {
+  return (boards[color] & boards[piece]);
+}
+
+U64 get_occupied() {
+  return (boards[white] | boards[black]);
+}
 
 /***************************\
           ATTACKS       
@@ -277,6 +336,158 @@ U64 behind() {
 }
 
 
+U64 ray_attacks[8][64];
+U64 pawn_attacks[2][64];
+U64 horse_attacks[64];
+U64 king_attacks[64];
+
+void init_attack() {
+  for (int sq = 0; sq < 64; sq++) {
+
+    ray_attacks[N][sq] = north_attack(sq);
+    ray_attacks[NE][sq] = northeast_attack(sq);
+    ray_attacks[E][sq] = east_attack(sq);
+    ray_attacks[SE][sq] = southeast_attack(sq);
+    ray_attacks[S][sq] = south_attack(sq);
+    ray_attacks[SW][sq] = southwest_attack(sq);
+    ray_attacks[W][sq] = west_attack(sq);
+    ray_attacks[NW][sq] = northwest_attack(sq);
+
+    for (int color = 0; color > 2; color++) {
+      pawn_attacks[color][sq] = pawn_attack(sq, color);
+    }
+
+    horse_attacks[sq] = horse_attack(sq);
+    king_attacks[sq] = king_attack(sq);
+
+
+  }
+}
+
+void init_boards() {
+  boards[white] = 0xffffULL;
+  boards[black] = 0xffff000000000000ULL;
+  boards[pawn] = 0x00ff00000000ff00ULL;
+
+  set_bit(boards[horse], b1);
+  set_bit(boards[horse], g1);
+  set_bit(boards[horse], b8);
+  set_bit(boards[horse], g8);
+
+  set_bit(boards[king], d1);
+  set_bit(boards[king], d8);
+
+  set_bit(boards[queen], e1);
+  set_bit(boards[queen], e8);
+
+  set_bit(boards[rook], a1);
+  set_bit(boards[rook], a1);
+  set_bit(boards[rook], h1);
+  set_bit(boards[rook], h8);
+
+  set_bit(boards[bishop], c1);
+  set_bit(boards[bishop], f1);
+  set_bit(boards[bishop], c8);
+  set_bit(boards[bishop], f8);
+
+
+}
+
+
+/***************************\
+           MOVES   
+\***************************/
+
+U64 positive_ray_attack(U64 occupied, int dir, int sq) {
+  U64 attack = ray_attacks[dir][sq];
+  U64 blocker = ((attack & occupied) | 0x8000000000000000ULL);
+  sq = bit_scan_forward(blocker);
+  return attack ^ ray_attacks[dir][sq];
+}
+
+U64 negative_ray_attack(U64 occupied, int dir, int sq) {
+  U64 attack = ray_attacks[dir][sq];
+  U64 blocker = ((attack & occupied) | 0x1ULL);
+  sq = bit_scan_reverse(blocker);
+  return attack ^ ray_attacks[dir][sq];
+}
+
+U64 get_bishop_attack(U64 occupied, int sq) {
+  
+  U64 attacks = 0x0ULL;
+  
+  attacks = positive_ray_attack(occupied, NE, sq);
+  attacks |= positive_ray_attack(occupied, NW, sq);
+  attacks |= negative_ray_attack(occupied, SE, sq);
+  attacks |= negative_ray_attack(occupied, SW, sq);
+
+  return attacks;
+}
+
+U64 get_rook_attack(U64 occupied, int sq) {
+  
+  U64 attacks = 0x0ULL;
+  
+  attacks = positive_ray_attack(occupied, N, sq);
+  attacks |= positive_ray_attack(occupied, E, sq);
+  attacks |= negative_ray_attack(occupied, S, sq);
+  attacks |= negative_ray_attack(occupied, W, sq);
+
+  return attacks;
+}
+
+U64 get_queen_attack(U64 occupied, int sq) {
+  return (get_bishop_attack(occupied, sq) | get_rook_attack(occupied, sq));
+}
+
+void get_moves(int color) {
+  
+  U64 occupied = get_occupied();
+  U64 moves, temp;
+  int sq, target_sq;
+  int opposite = get_opposite(color);
+
+  U64 pawns = get_bb(color, pawn);
+  U64 horses = get_bb(color, horse);
+  U64 kings = get_bb(color, king);
+  U64 queens = get_bb(color, queen);
+  U64 rooks = get_bb(color, rook);
+
+
+  U64 bishops = get_bb(color, bishop);
+  while (bishops) {
+    sq = bit_scan_forward(bishops);
+    printf("\n\nFOR BISHOP @%d:", sq);
+
+    moves = get_bishop_attack(occupied, sq);
+    moves &= ~boards[color];
+
+    temp = moves & boards[opposite];
+    moves &= ~boards[opposite];
+    
+    printf("\n   tactical moves:");
+    while (temp) {
+      target_sq = bit_scan_forward(temp);
+      printf(" %d ", target_sq);
+      pop_bit(temp, target_sq);
+    }
+    
+    printf("\n   quiet moves:");
+    while (moves) {
+      target_sq = bit_scan_forward(moves);
+      printf(" %d ", target_sq);
+      pop_bit(moves, target_sq);
+    }
+    pop_bit(bishops, sq);
+  }
+  
+
+
+
+
+}
+
+
 /***********************************************\
  * =========================================== *
                  Main Driver
@@ -286,22 +497,15 @@ U64 behind() {
 int main()  {
     printf("\n\nhello\n\n");
 
-    U64 bb = 0ULL;
+    init_boards();
+    init_attack();
 
-    //bb = pawn_attack(h3, black);
-    //bb = horse_attack(g2);
-    //bb = king_attack(e6);
-    //bb = rank_attack(e3);
-    //bb = file_attack(a3);
-    //bb = rook_attack(f5);
-    //bb = diag_attack(f5);
-    //bb = antidiag_attack(f5);
-    //bb = bishop_attack(g2);
-    bb = northwest_attack(d5);
+    move_piece(white, pawn, d2, d4);
+    move_piece(black, pawn, d7, d5);
+    move_piece(white, bishop, c1, f4);
 
-
-
-    printbb(bb);
+    printbb(get_occupied());
+    get_moves(white);
 
     printf("\n\n\n");
     return 0;
