@@ -100,8 +100,6 @@ enum rank {
 #define decode_enpassant_rank(enpassant) ((enpassant&0xE) >> 1)
 
 
-
-
 typedef struct {
   U64 boards[8];
   //which castles can done 
@@ -1375,9 +1373,6 @@ int main() {
     printf("\n\n%d%d\n\n", decode_enpassant_flag(position.enpassant), decode_enpassant_rank(position.enpassant));
     play(position);
     
-
-
-
 /*
     //printbb(get_occupied(position.boards[white], position.boards[black]));
     printgb(position);

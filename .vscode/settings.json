@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "__functional_03": "c",
+        "functional": "c",
+        "__bit_reference": "c",
+        "__string": "c",
+        "algorithm": "c",
+        "deque": "c",
+        "ios": "c",
+        "string": "c",
+        "type_traits": "c",
+        "stdlib.h": "c",
+        "__node_handle": "c"
+    }
+}
