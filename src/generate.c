@@ -264,28 +264,31 @@ move_list generate_moves(position position) {
     //white
     if (color == white) {
 
-      //single pushes
+      //pushes
       if ((moves << 8) & ~occupied) {
-        list.moves[list.count++] = encode_move(sq, (sq+8), 0, 0, 0, 0, pawn, color);
-        //double pushes
-        if ((moves & rank_2) && ((moves << 16) & ~occupied)) {
-            list.moves[list.count++] = encode_move(sq, (sq+16), 0, 0, 0, 1, pawn, color);
-        }
-        //promotions & promotion captures
+        //single push promotions
         if (moves & rank_7) {
           list.moves[list.count++] = encode_move(sq, (sq+8), 1, 0, 0, 0, pawn, color);
           list.moves[list.count++] = encode_move(sq, (sq+8), 1, 0, 0, 1, pawn, color);
           list.moves[list.count++] = encode_move(sq, (sq+8), 1, 0, 1, 0, pawn, color);
           list.moves[list.count++] = encode_move(sq, (sq+8), 1, 0, 1, 1, pawn, color);
         }
+        //normal single push
+        else {
+          list.moves[list.count++] = encode_move(sq, (sq+8), 0, 0, 0, 0, pawn, color);
+          //double pushes
+          if ((moves & rank_2) && ((moves << 16) & ~occupied)) {
+            list.moves[list.count++] = encode_move(sq, (sq+16), 0, 0, 0, 1, pawn, color);
+          }
+        }
       }
 
-      //attacks
+      //captures
       attacks = pawn_attacks[color][sq];
       attacks &= position.boards[opposite];
       while (attacks) {
         target = bit_scan_forward(attacks);
-        //promotion capture
+        //promotion captures
         if (moves & rank_7) {
           list.moves[list.count++] = encode_move(sq, target, 1, 1, 0, 0, pawn, color);
           list.moves[list.count++] = encode_move(sq, target, 1, 1, 0, 1, pawn, color);
@@ -298,8 +301,8 @@ move_list generate_moves(position position) {
         }
         pop_bit(attacks, target);
       }
+
       //enpassant
-      //nested because there cant't be a piece between double push
       if (enpassantable && (moves & rank_5)) {
         //square to be attacked
         enpassant_sq = get_sq(enpassant, 6);
@@ -319,18 +322,20 @@ move_list generate_moves(position position) {
     else {
       //single pushes
       if ((moves >> 8) & ~occupied) {
-        list.moves[list.count++] = encode_move(sq, (sq-8), 0, 0, 0, 0, pawn, color);
-        //double pushes
-        //nested because there cant't be a piece between double push
-        if ((moves & rank_7) && ((moves >> 16) & ~occupied)) {
-          list.moves[list.count++] = encode_move(sq, (sq-16), 0, 0, 0, 1, pawn, color);
-        }
         //promotions
         if (moves & rank_2) {
           list.moves[list.count++] = encode_move(sq, (sq-8), 1, 0, 0, 0, pawn, color);
           list.moves[list.count++] = encode_move(sq, (sq-8), 1, 0, 0, 1, pawn, color);
           list.moves[list.count++] = encode_move(sq, (sq-8), 1, 0, 1, 0, pawn, color);
           list.moves[list.count++] = encode_move(sq, (sq-8), 1, 0, 1, 1, pawn, color);
+        }
+        else {
+        list.moves[list.count++] = encode_move(sq, (sq-8), 0, 0, 0, 0, pawn, color);
+          //double pushes
+          //nested because there cant't be a piece between double push
+          if ((moves & rank_7) && ((moves >> 16) & ~occupied)) {
+            list.moves[list.count++] = encode_move(sq, (sq-16), 0, 0, 0, 1, pawn, color);
+          }
         }
       }
 
@@ -369,7 +374,7 @@ move_list generate_moves(position position) {
       }
     }
 
-  pop_bit(pawns, sq);
+    pop_bit(pawns, sq);
   }
 
   //generate horse moves
@@ -425,15 +430,15 @@ move_list generate_moves(position position) {
   //generate queen moves
   U64 queens = get_bb(position.boards[color], position.boards[queen]);
   while (queens) {
-  sq = bit_scan_forward(queens);
+    sq = bit_scan_forward(queens);
 
-  moves = get_queen_attack(occupied, sq);
-  moves &= ~position.boards[color];
+    moves = get_queen_attack(occupied, sq);
+    moves &= ~position.boards[color];
 
-  temp = moves & position.boards[opposite];
-  moves &= ~position.boards[opposite];
+    temp = moves & position.boards[opposite];
+    moves &= ~position.boards[opposite];
 
-  while (temp) {
+    while (temp) {
       target = bit_scan_forward(temp);
       pop_bit(temp, target);
       list.moves[list.count++] = encode_move(sq, target, 0, 1, 0, 0, queen, color);
@@ -444,7 +449,7 @@ move_list generate_moves(position position) {
       list.moves[list.count++] = encode_move(sq, target, 0, 0, 0, 0, queen, color);
       pop_bit(moves, target);
     }
-  pop_bit(queens, sq);
+    pop_bit(queens, sq);
   }
   
   //generate rook moves

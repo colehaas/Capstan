@@ -10,6 +10,8 @@
         "string": "c",
         "type_traits": "c",
         "stdlib.h": "c",
-        "__node_handle": "c"
+        "__node_handle": "c",
+        "chrono": "c",
+        "unordered_map": "c"
     }
 }

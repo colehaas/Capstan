@@ -11,8 +11,6 @@
 #ifndef ATTACK_H
 #define ATTACK_H
 
-#include "bitboards.h"
-#include "position.h"
 
 /***************************\
           ATTACKS       

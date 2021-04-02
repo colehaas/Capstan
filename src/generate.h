@@ -11,10 +11,7 @@
 #ifndef GENERATE_H
 #define GENERATE_H
 
-#include "bitboards.h"
-#include "attack.h"
-#include "position.h"
-#include "square.h"
+
 
 /*********************\
 * MOVE REPRESENTATION *
@@ -70,10 +67,7 @@
 #define decode_color(move) ((move&0x80000) >> 19)
 
 
-typedef struct  {
-  unsigned int moves[256];
-  unsigned int count;
-} move_list;
+
 
 
 //print bitboard

@@ -12,7 +12,7 @@
 #define POSITION_H
 
 #include "bitboards.h"
-
+#include "square.h"
 
 //colors & pieces
 enum {
@@ -70,7 +70,12 @@ enum rank
 #define decode_enpassant_flag(enpassant) (enpassant & 1)
 #define decode_enpassant_rank(enpassant) ((enpassant & 0xE) >> 1)
 
-typedef struct
+typedef struct move_list {
+  unsigned int moves[256];
+  unsigned int count;
+} move_list;
+
+typedef struct position
 {
     //bitboards
     U64 boards[8];
@@ -82,6 +87,9 @@ typedef struct
     unsigned short enpassant;
     //color to move
     unsigned short turn;
+    //list of moves
+    move_list game_list;
+
 } position;
 
 void init_square(position *position);
@@ -89,6 +97,7 @@ void init_enpassant(position *position);
 void init_castle(position *position);
 void init_turn(position *position);
 void init_boards(position *position);
+void init_game_list(position *position);
 void empty_position(position *position);
 void init_position(position *position);
 position parse_fen(char *fen);

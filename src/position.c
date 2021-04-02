@@ -28,6 +28,10 @@ void init_turn(position *position) {
   position->turn = white;
 }
 
+void init_game_list(position *position) {
+  position->game_list.count = 0;
+}
+
 void init_boards(position *position) {
 
   position->boards[white] = 0xffffULL;
@@ -72,6 +76,7 @@ void init_position(position *position) {
   init_square(position);
   init_castle(position);
   init_enpassant(position);
+  init_game_list(position);
   init_turn(position);
 }
 
@@ -109,7 +114,7 @@ position parse_fen(char *fen) {
   int offset = 0;
 
   printf("%s", fen);
-  printf("\n%lu\n\n", length);
+  
 
   //board
   //for ranks 8-1
