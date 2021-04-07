@@ -33,10 +33,10 @@ void printsquareboard(position position);
 void bb_to_square(position *position);
 
 
-void remove_square(position position, int sq);
-void add_square(position position, int sq, int color, int piece);
-void move_square(position position, int source, int target);
-void promotion_square(position position, int source, int target, int piece);
+void remove_square(position *position, int sq);
+void add_square(position *position, int sq, int color, int piece);
+void move_square(position *position, int source, int target);
+void promotion_square(position *position, int source, int target, int piece);
 
 int sq_attacked_by_pawn(position position, int sq);
 int sq_attacked_by_horse(position position, int sq);

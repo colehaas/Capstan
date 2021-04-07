@@ -11,45 +11,66 @@
 #include "generate.h"
 #include "make.h"
 #include "square.h"
+#include "perft.h"
+
+
 
 int main() {
     
     printf("\n\nhello\n\n");
-
-    position position;
-
-    init_position(&position);
+    //perft_test("perft.txt", 100, 4);
+    position pos;
     init_attack();
-    printsquareboard(position);
 
-/* 
-    move_piece(&position, white, pawn, d2, d4);
-    move_piece(&position, black, pawn, d7, d5);
-    move_piece(&position, white, bishop, c1, f4);
-    move_piece(&position, black, pawn, c7, c4);
-    move_piece(&position, white, pawn, h2, h4);
-    move_piece(&position, black, pawn, a7, b6);
-    move_piece(&position, white, pawn, a2, a7);
-*/
+    for (int c = 0; c < 8; c++) pos.boards[c] = 0x0ULL;
+    for (int sq = 0; sq < 64; sq++) pos.square[sq] = 0;
+    pos.turn = white;
+    pos.castle = encode_castle(1, 1, 1, 1);
+    pos.enpassant = encode_enpassant(0, 0);
+    pos.index = 0;
 
-    position = parse_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
-    printf("\n\n%d%d\n\n", decode_enpassant_flag(position.enpassant), decode_enpassant_rank(position.enpassant));
-    //play(position);
-    bb_to_square(&position);
+    parse(&pos, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+    bb_to_square(&pos);
+
+    gamelist game[256];
+    //move_list moves;
     
-    U64 nodes = perft(position, 1);
-    printf("\n\n%lld", nodes);
-    
+    printpos(pos);
+    printgb(pos);
+    //play(&pos, game);
+
+    printf("\n\nperft results:\n\n");
+    for (int i = 1; i < 7; i++) {
+        U64 result = perft(&pos, game, i);
+        printf("%2d: %lld\n", i, result);
+    }
 
 
-/*
-    //printbb(get_occupied(position.boards[white], position.boards[black]));
-    printgb(position);
+/*     int i = 20;
+    int illegal = 0;
+    while(i) {
+        moves = generate_moves(pos);
+        printmoves(moves);
+        illegal = make(&pos, game, moves.moves[6]);
+        printmove(moves.moves[6]);
+        if (illegal) {
+            unmake(&pos, game);
+        }
+        printgb(pos);
+        i--;
+    }
+    i = 20;
+    while (i) {
+        unmake(&pos, game);
+        printgb(pos);
+        i--;
+    } */
+
+
     
-    move_list moves = generate_moves(position, white);
-    printmoves(moves);
+
     
-*/
+
   
     printf("\n\n\n");
     return 0;

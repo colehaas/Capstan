@@ -2,7 +2,7 @@
  * ================================= *
    \^&%!%$/?^&\$!%^&%+\!!^`\?!%\+^\?  
    !%^`$!"\               %!"$%!%\!%
-   +\$%^!    position.h    !^$&%?`\>
+   +\$%^!    position.c    !^$&%?`\>
    \?&%+\!+               &$%\!%$!%$
    $%^$%`\]!^+\^&`$!"$!`\$!\$%!%\^<!
  * ================================= *
@@ -10,23 +10,6 @@
 
 #include "position.h"
 
-void init_square(position *position) {
-  for (int sq = 0; sq < 64; sq++) {
-    position->square[sq] = 0;
-  }
-}
-
-void init_enpassant(position *position) {
-  position->enpassant = encode_enpassant(0, 0);
-}
-
-void init_castle(position *position) {
-  position->castle = encode_castle(1, 1, 1, 1);
-}
-
-void init_turn(position *position) {
-  position->turn = white;
-}
 
 void init_boards(position *position) {
 
@@ -58,26 +41,22 @@ void init_boards(position *position) {
 
 }
 
-void empty_position(position *position) {
+void init_position(position *pos) {
   for (int c = 0; c < 8; c++) {
-    position->boards[c] = 0x0ULL;
+    pos->boards[c] = 0x0ULL;
   }
-  init_castle(position);
-  init_enpassant(position);
-  init_turn(position);
+    for (int sq = 0; sq < 64; sq++) {
+    pos->square[sq] = 0;
+  }
+  pos->turn = white;
+  pos->castle = encode_castle(1, 1, 1, 1);
+  pos->enpassant = encode_enpassant(0, 0);
+  pos->index = 0;
 }
 
-void init_position(position *position) {
-  init_boards(position);
-  init_square(position);
-  init_castle(position);
-  init_enpassant(position);
-  init_turn(position);
-}
-
-position parse_fen(char *fen) {
+void parse(position *pos, char *fen) {
   //seperate
-//arrays currently used in parse_fen
+  //arrays currently used in parse_fen
   int char_pieces[] = {
       ['P'] = pawn,
       ['p'] = pawn,
@@ -102,116 +81,130 @@ position parse_fen(char *fen) {
       ['g'] = g,
       ['h'] = h};
 
-  position position;
-  empty_position(&position);
-  unsigned long length = strlen(fen);
+  init_position(pos);
+
   int color, piece, sq;
   int offset = 0;
 
-  printf("%s", fen);
-  printf("\n%lu\n\n", length);
+  //convert fen into readable char array for strtok
+  size_t size = strlen(fen) + 1;
+  char *c = malloc(size);
+  strcpy(c, fen);
 
-  //board
-  //for ranks 8-1
-  for (int r = 7; r >= 0 ; r--) {
-    //for files a-h
-    for (int f = 0; f < 8; f++) {
-      
-      if (offset > 0) { 
-        offset--;
-      }
-      else {
-        sq = r*8+f;
-        //ignore symbol
-        if (*fen == '/') fen++;
-        //spaces to skip
-        if (*fen >= '0' && *fen <= '8') {
-          //skip sq's, -1 because skip current sq
-          offset = *fen - '0' - 1;
-          fen++;
+  char delim[] = " ";
+
+  //first call for strtok
+	char *ptr = strtok(c, delim);
+
+  //set boards
+  //would love to make this cleaner
+	if (ptr != NULL) {
+    
+    size = strlen(ptr) + 1;
+    char *board = malloc(size);
+    strcpy(board, ptr);
+    //board
+    //for ranks 8-1
+    for (int r = 7; r >= 0 ; r--) {
+      //for files a-h
+      for (int f = 0; f < 8; f++) {
+        if (offset > 0) { 
+          offset--;
         }
-        //piece
-        else if ((*fen >= 'a' && *fen <= 'z')||(*fen >= 'A' && *fen <= 'Z')) {
-          //white pieces
-          if (*fen >= 'A' && *fen <= 'Z') {
-            color = white;
-            piece = char_pieces[*fen];
+        else {
+          sq = r*8+f;
+          //ignore symbol
+          if (*board == '/') board++;
+          //spaces to skip
+          if (*board >= '0' && *board <= '8') {
+            //skip sq's, -1 because skip current sq
+            offset = *board - '0' - 1;
+            board++;
           }
-          //black pieces
-          else {
-            color = black;
-            piece = char_pieces[*fen];
+          //piece
+          else if ((*board >= 'a' && *board <= 'z')||(*board >= 'A' && *board <= 'Z')) {
+            //white pieces
+            if (*board >= 'A' && *board <= 'Z') {
+              color = white;
+              piece = char_pieces[(int)*board];
+            }
+            //black pieces
+            else {
+              color = black;
+              piece = char_pieces[(int)*board];
+            }
+            set_bit(pos->boards[piece], sq);
+            set_bit(pos->boards[color], sq);
+            board++;
           }
-          set_bit(position.boards[piece], sq);
-          set_bit(position.boards[color], sq);
-          fen++;
         }
       }
     }
   }
 
-  //skip space
-  fen++;
+  //set color
+  if (ptr != NULL) {
+    ptr = strtok(NULL, delim);
+    if (*ptr == 'b') pos->turn = black;
+    else pos->turn = white;
+	}
 
-  //color turn
-  if (*fen == 'w') {
-    color = white;
+  //set castling
+  if (ptr != NULL) {
+    ptr = strtok(NULL, delim);
+    size = strlen(ptr) + 1;
+    char *castle = malloc(size);
+    strcpy(castle, ptr);
+
+    int wk= 0, wq = 0, bk = 0, bq = 0;
+  
+    if (*castle != '-') {
+      for (int c = 0; c < 4; c++) {
+        if (*castle == 'K') wk = 1;
+        else if (*castle == 'Q') wq = 1;
+        else if (*castle == 'k') bk = 1;
+        else if (*castle == 'q') bq = 1;
+        castle++;
+      }
+    }
+    pos->castle = encode_castle(wk, wq, bk, bq);
   }
-  else {
-    color = black;
-  } 
-  position.turn = color;
-  fen++;
 
-  //skip space
-  fen++;
-
-  //castle
-  int wk = 0;
-  int wq = 0;
-  int bk = 0;
-  int bq = 0;
-  if (*fen != '-') {
-    while (*fen != ' ') {
-      if (*fen == 'K') wk = 1;
-      else if (*fen == 'Q') wq = 1;
-      else if (*fen == 'k') bk = 1;
-      else if (*fen == 'q') bq = 1;
-      fen++;
+  //set enpassant
+  if (ptr != NULL) {
+    ptr = strtok(NULL, delim);
+    if (*ptr != '-') {
+      pos->enpassant = encode_enpassant(1, char_files[(int)*ptr]);
+    }
+    else {
+      pos->enpassant = encode_enpassant(0, 0);
     }
   }
-  //skip -
-  else fen++;
-  position.castle = encode_castle(wk, wq, bk, bq);
 
-  //skip space
-  fen++;
-
-  //enpassant
-  int flag = 0;
-  int rank = 0;
-  piece = 0;
-  if (*fen != '-') {
-    rank = char_files[*fen];
-    flag = 1;
-    fen++;
-    fen++;
-  }
-  //skip -
-  else fen++;
-  position.enpassant = encode_enpassant(flag, rank);
-
-  /*
-  //skip space
-  fen++;
-  */
-
-  //still need to add half and full moves
-  return position;
 }
 
 
 
+void printpos(position pos) {
+  
+  printf("\nTurn: ");
+  if (pos.turn) printf("Black");
+  else printf("White");
+
+  printf("\nCastling: ");
+  int castle = pos.castle;
+  if (decode_castle_wk(castle)) printf("K");
+  if (decode_castle_wq(castle)) printf("Q");
+  if (decode_castle_bk(castle)) printf("k");
+  if (decode_castle_bq(castle)) printf("q");
+
+  printf("\nEnpassant: ");
+  if (decode_enpassant_flag(pos.enpassant)) {
+    printf("%d", decode_enpassant_rank(pos.enpassant));
+  
+  }
+
+}
 
 
 

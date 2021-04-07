@@ -1,0 +1,2 @@
+could make gamelist just have a pointer to the previous gamelist
+    an only backwards reversed list
