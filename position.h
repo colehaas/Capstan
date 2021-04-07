@@ -28,23 +28,17 @@ enum {
 
 \*************************************/
 
-enum castle
-{
-    wk = 1,
-    wq = 2,
-    bk = 4,
-    bq = 8
-};
+
 
 //castle encoding macros
 #define encode_castle(whiteking, whitequeen, blackking, blackqueen) \
     (whiteking) | (whitequeen << 1) |                               \
         (blackking << 2) | (blackqueen << 3)
 
-#define decode_castle_wk(castle) (castle & wk)
-#define decode_castle_wq(castle) ((castle & wq) >> 1)
-#define decode_castle_bk(castle) ((castle & bk) >> 2)
-#define decode_castle_bq(castle) ((castle & bq) >> 3)
+#define decode_castle_wk(castle) (castle & 1)
+#define decode_castle_wq(castle) ((castle & 2) >> 1)
+#define decode_castle_bk(castle) ((castle & 4) >> 2)
+#define decode_castle_bq(castle) ((castle & 8) >> 3)
 
 /***** ENPASSANT ENCODING FORMAT *****\
   f: flag
@@ -70,27 +64,28 @@ enum rank
 #define decode_enpassant_flag(enpassant) (enpassant & 1)
 #define decode_enpassant_rank(enpassant) ((enpassant & 0xE) >> 1)
 
+
 typedef struct
 {
-    //bitboards
-    U64 boards[8];
-    //squareboard
-    unsigned int square[64];
-    //which castles can done
-    unsigned short castle;
-    //current enpassantable pawns
-    unsigned short enpassant;
-    //color to move
-    unsigned short turn;
+  //bitboards
+  U64 boards[8];
+  //squareboard
+  unsigned int square[64];  
+  //color to move
+  unsigned short turn;
+  //which castles can done
+  unsigned short castle;
+  //current enpassantable pawns
+  unsigned short enpassant;
+  //index for gamelist struct
+  unsigned int index;
+  
 } position;
 
-void init_square(position *position);
-void init_enpassant(position *position);
-void init_castle(position *position);
-void init_turn(position *position);
+
 void init_boards(position *position);
-void empty_position(position *position);
 void init_position(position *position);
-position parse_fen(char *fen);
+void parse(position *pos, char *fen);
+void printpos(position pos);
 
 #endif

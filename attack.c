@@ -68,8 +68,8 @@ U64 king_attack(int sq) {
   attack |= ((bb >> 8)); //S
   attack |= ((bb << 8)); //N
 
-  attack |= (((bb << 1)|(bb << 9)|(bb >> 7)) & not_a()); //E
-  attack |= (((bb >> 1)|(bb << 7))|(bb >> 9) & not_h()); //W
+  attack |= (( (bb << 1) | (bb << 9) | (bb >> 7) ) & not_a() ); //E
+  attack |= (( (bb >> 1) | (bb << 7) | (bb >> 9) ) & not_h() ); //W
 
   return attack;
 }

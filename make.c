@@ -11,264 +11,610 @@
   `%$^?\$^\&^$`%?\%$%>"&^%^%%^%?!/|_^&)!?<$%^$&^<&>!`%\$!\!`%^$%^$%`\]!!$\`/
   %>"&^%^%^$!%+\^&%!%&!\%$%\?+\%$%\?+\%$^!$/$$/?^!%^&\`$^&!\%`\%$^&>!+\$!%^&
  * ========================================================================= *
-\******************************************************************************/
+\*****************************************************************************/
 
-/*************************************\
- * ================================= *
-  +\^&%!%$/?^&\$!%^&%+\!!^`\?!%\+^\?  
-  %!%^`$!"&!$          ^!>%!"$%!%\!%
-  ^+\$%^!$!    make.c   ?|&!^$&%?`\>
-  ^\?&%+\!$%           `$!"$%\!%$!%$
-  ^$%^$%`\]!^+\^&`$!"$!`\$!\$%!%\^<!
- * ================================= *
-\*************************************/
+/*****************************************************************************\
+ * ========================================================================= *   
+  +\^&%!%$/?^&\$!%^^&!<!%\+^\&%+\!!^`\?^%?<}%^&!^&!<!%\+^\^&!<!%\+^\?\?!%\+^
+  %!%^`$&+"&^%^\`\^&!<!%\+^\"&^%              &!$^!>%!"$^%?<}%^&$^%?<}%^&\!%
+  ^+\&+\^&!`\%$"&^%^^&!<!+$%^!      make.c      !^$\!!^^%?<^&!<!%\+^\}&+\^&!
+  ^\?&%"&^%\"&^%^%&$^&!<!%\+^\^&              !<!^<&!+\!$%$!"$%\\!!^`\?!%\+^
+  ^$%^$%`\]!^\!!^`\?!%\+^+\^&`$\$!"$!`\$!\$%\!!^`\?`\%$^&!<\?!%\+^&%?`\>!!%\
+ * ========================================================================= *
+\*****************************************************************************/
  
 #include "make.h"
 
-//for make function
-int get_rank(int sq) {
-  return (sq % 8);
+
+void init_gamelist(gamelist *gamelist) {
+  gamelist->move = 0;
+  gamelist->castle = encode_castle(1, 1, 1, 1);
+  gamelist->enpassant = encode_enpassant(0, 0);
+  gamelist->captured = 0;
 }
 
-/***************************\
-       MAKE & UNMAKE   
-\***************************/
 
-position make(position from, int move) {
-  position to = from;
+/*****************************************************************************\
+                             HELPER FUNCTIONS
+\*****************************************************************************/
+
+void make_quiet(position *pos, int source, int target) {
+
+  //get source piece
+  int color = get_square_color(*pos, source);
+  int piece = get_square_piece(*pos, source);
+
+  //remove source piece from source sq 
+  pop_bit(pos->boards[color], source);
+  pop_bit(pos->boards[piece], source);
+  remove_square(pos, source);
+
+  //add source piece to target sq
+  set_bit(pos->boards[color], target);
+  set_bit(pos->boards[piece], target);
+  add_square(pos, target, color, piece);
+}
+
+void make_capture(position *pos, gamelist *gl, int source, int target) {
+  
+  //get source piece
+  int color = get_square_color(*pos, source);
+  int piece = get_square_piece(*pos, source);
+
+  //get capture piece and save in gamelist
+  int capture = get_square_piece(*pos, target);
+  gl[pos->index].captured = capture;
+
+  //remove source piece from source sq
+  pop_bit(pos->boards[color], source);
+  pop_bit(pos->boards[piece], source);
+
+  //remove target piece from target sq
+  pop_bit(pos->boards[get_opposite(color)], target);
+  pop_bit(pos->boards[capture], target);
+
+  //add source piece to target sq 
+  set_bit(pos->boards[color], target);
+  set_bit(pos->boards[piece], target);
+
+  move_square(pos, source, target);
+}
+
+void make_enpassant(position *pos, gamelist *gl, int source, int target) {
+  int color = get_square_color(*pos, source);
+  int piece = get_square_piece(*pos, source);
+  //get enpassant sq
+  int enpassant;
+  if (color == white) {
+    enpassant = get_sq(decode_enpassant_rank(pos->enpassant), 5);
+  }
+  else {
+    enpassant = get_sq(decode_enpassant_rank(pos->enpassant), 4);
+  }
+  
+  gl[pos->index].captured = pawn;
+
+  //remove source piece from source sq
+  pop_bit(pos->boards[color], source);
+  pop_bit(pos->boards[piece], source);
+
+  //remove enpassant sq
+  pop_bit(pos->boards[get_opposite(color)], enpassant);
+  pop_bit(pos->boards[pawn], enpassant);
+  remove_square(pos, enpassant);
+
+  //move source piece to target
+  set_bit(pos->boards[color], target);
+  set_bit(pos->boards[piece], target);
+
+  move_square(pos, source, target);
+  
+}
+
+void make_quiet_promotion(position *pos, int source, int target, int promotion) {
+  int color = get_square_color(*pos, source);
+  int piece = get_square_piece(*pos, source);
+  pop_bit(pos->boards[color], source);
+  pop_bit(pos->boards[piece], source);
+  set_bit(pos->boards[color], target);
+  set_bit(pos->boards[promotion], target);
+  promotion_square(pos, source, target, promotion);
+}
+
+void make_capture_promotion(position *pos, gamelist *gl, int source, int target, int promotion) {  
+  int color = get_square_color(*pos, source);
+  int piece = get_square_piece(*pos, source);
+  int capture = get_square_piece(*pos, target);
+  gl[pos->index].captured = capture;
+  //remove source
+  pop_bit(pos->boards[color], source);
+  pop_bit(pos->boards[piece], source);
+  //remove target
+  pop_bit(pos->boards[get_opposite(color)], target);
+  pop_bit(pos->boards[capture], target);
+  //add source to target
+  set_bit(pos->boards[color], target);
+  set_bit(pos->boards[promotion], target);
+  promotion_square(pos, source, target, promotion);
+} 
+
+//this group of functions return 1 if illegal, else 0
+
+int make_wk_castle(position *pos) {
+  //king e1->g1
+  make_quiet(pos, e1, g1);
+  //rook h1->f1
+  make_quiet(pos, h1, f1);
+  //return if move is legal
+  return (sq_attacked(*pos, e1)||sq_attacked(*pos, g1)||sq_attacked(*pos, f1));
+}
+
+int make_bk_castle(position *pos) {
+  //king e8->g8
+  make_quiet(pos, e8, g8);
+  //rook h8->f8
+  make_quiet(pos, h8, f8);
+  //return if move is legal
+  return (sq_attacked(*pos, e8)||sq_attacked(*pos, g8)||sq_attacked(*pos, f8));
+}
+
+int make_wq_castle(position *pos) {
+  //king e1->c1
+  make_quiet(pos, e1, c1);
+  //rook a1->d1
+  make_quiet(pos, a1, d1);
+  //return if move is legal
+  return (sq_attacked(*pos, c1)||sq_attacked(*pos, d1)||sq_attacked(*pos, e1));
+}
+
+int make_bq_castle(position *pos) {
+  //king e8->c8
+  make_quiet(pos, e8, c8);
+  //rook a8->d8
+  make_quiet(pos, a8, d8);
+  //return if move is legal
+  return (sq_attacked(*pos, c8)||sq_attacked(*pos, d8)||sq_attacked(*pos, e8));
+}
+
+
+void unmake_capture(position *pos, gamelist *gl, int source, int target) {
+
+  //current state: source piece on target sq, capture piece absent
+
+  //get source piece from target sq
+  int color = get_square_color(*pos, target);
+  int piece = get_square_piece(*pos, target);
+
+  //get capture piece from memory
+  int capture = gl[pos->index].captured;
+
+  //remove source piece off target sq
+  pop_bit(pos->boards[color], target);
+  pop_bit(pos->boards[piece], target);
+
+  //add capture piece to target sq
+  set_bit(pos->boards[get_opposite(color)], target);
+  set_bit(pos->boards[capture], target);
+  add_square(pos, target, get_opposite(color), capture);
+
+  //add source piece to source sq
+  set_bit(pos->boards[color], source);
+  set_bit(pos->boards[piece], source);
+  add_square(pos, source, color, piece);
+
+}
+
+void unmake_enpassant(position *pos, gamelist *gl, int source, int target) {
+  int color = get_square_color(*pos, target);
+  int piece = get_square_piece(*pos, target);
+  //get enpassant sq
+  int enpassant;
+  if (color == white) {
+    enpassant = get_sq(decode_enpassant_rank(gl[pos->index].enpassant), 5);
+  }
+  else {
+    enpassant = get_sq(decode_enpassant_rank(gl[pos->index].enpassant), 4);
+  }
+
+  //remove source piece from target sq
+  pop_bit(pos->boards[color], target);
+  pop_bit(pos->boards[piece], target);
+
+  //add target piece to enpassant sq
+  set_bit(pos->boards[get_opposite(color)], enpassant);
+  set_bit(pos->boards[pawn], enpassant);
+  add_square(pos, enpassant, get_opposite(color), pawn);
+
+  //add source piece to source square
+  set_bit(pos->boards[color], source);
+  set_bit(pos->boards[piece], source);
+  
+  move_square(pos, target, source);
+  
+}
+
+void unmake_quiet_promotion(position *pos, int source, int target) {
+  
+  //current state: source piece gone(pawn), promotion piece on target sq
+  
+  //get source color and promotion piece from target sq
+  int color = get_square_color(*pos, target);
+  int piece = get_square_piece(*pos, target);
+
+  //remove promotion piece off target sq
+  pop_bit(pos->boards[color], target);
+  pop_bit(pos->boards[piece], target);
+  remove_square(pos, target);
+
+  //add pawn to source sq
+  set_bit(pos->boards[color], source);
+  set_bit(pos->boards[pawn], source);
+  add_square(pos, source, color, pawn);
+  
+}
+
+void unmake_capture_promotion(position *pos, gamelist *gl, int source, int target) {
+
+  //current state: source piece gone(pawn), target piece gone
+  //promotion piece on target sq
+
+  //get source color
+  int color = get_square_color(*pos, target);
+  //get promtion piece
+  int piece = get_square_piece(*pos, target);
+  //get capture piece from memory
+  int capture = gl[pos->index].captured;
+
+  //remove promotion piece off target sq
+  pop_bit(pos->boards[color], target);
+  pop_bit(pos->boards[piece], target);
+
+  //add captured piece to target sq
+  set_bit(pos->boards[get_opposite(color)], target);
+  set_bit(pos->boards[capture], target);
+  add_square(pos, target, get_opposite(color), capture);
+
+  //add pawn to source sq
+  set_bit(pos->boards[color], source);
+  set_bit(pos->boards[pawn], source);
+  add_square(pos, source, color, pawn);
+
+  
+}
+
+
+void unmake_wk_castle(position *pos) {
+  //king g1->e1
+  make_quiet(pos, g1, e1);
+  //rook f1->h1
+  make_quiet(pos, f1, h1);
+
+}
+
+void unmake_bk_castle(position *pos) {
+  //king g8->e8
+  make_quiet(pos, g8, e8);
+  //rook f8->h8
+  make_quiet(pos, f8, h8);
+}
+
+void unmake_wq_castle(position *pos) {
+  //king c1->e1
+  make_quiet(pos, c1, e1);
+  //rook d1->a1
+  make_quiet(pos, d1, a1);
+}
+
+void unmake_bq_castle(position *pos) {
+  //king c8->e8
+  make_quiet(pos, c8, e8);
+  //rook d8->a8
+  make_quiet(pos, d8, a8);
+}
+
+
+
+/*****************************************************************************\
+                                   MAKE
+\*****************************************************************************/
+
+//returns 1 if illegal, else 0
+//index should start pointing at the move being made
+int make(position *pos, gamelist *gl, int move) {
+  
+  //0 if legal, 1 if illegal
+  int illegal = 0;
+
+  //get source, target squares
   int source = decode_source(move);
   int target = decode_target(move);
-  int piece = decode_piece(move);
-  int color = decode_color(move);
+
+  //get move flags to determine move type
   int promotion = decode_promotion(move);
   int capture = decode_capture(move);
   int y = decode_y(move);
   int z = decode_z(move);
-  int capture_piece;
+  
+  //remember move
+  //get captured later
+  gl[pos->index].move = move;
+  gl[pos->index].enpassant = pos->enpassant;
+  gl[pos->index].castle = pos->castle;
+
+  //keep track of enpassant through move
+  int enpassant = 0;
 
 
-  if (promotion==0) {
-    if (capture==0) {
+
+  //change castling rights
+  //if rook or king move
+  int piece = get_square_piece(*pos, source);
+  if ((piece == king)||(piece == rook)) {
+    int wk = decode_castle_wk(pos->castle);
+    int bk = decode_castle_bk(pos->castle);
+    int wq = decode_castle_wq(pos->castle);
+    int bq = decode_castle_bq(pos->castle);
+    //king
+    if (piece == king) {
+      if (!pos->turn) {
+        wk = 0;
+        wq = 0;
+      }
+      else {
+        bk = 0;
+        bq = 0;
+      }
+    }
+    //rooks
+    else {
+      //white
+      if (!pos->turn) {
+        if (source == a1) {
+          wq = 0;
+        }
+        else if (source == h1) {
+          wk = 0;
+        }
+      }
+      else {
+        if (source == a8) {
+          bq = 0;
+        }
+        else if (source == h8) {
+          bk = 0;
+        }
+      }
+    }
+    pos->castle = encode_castle(wk, wq, bk, bq);
+  }
+  //rook is captured
+  piece = get_square_piece(*pos, target);
+  //printf("piece = %d", piece);
+  if (piece == rook) {
+    int wk = decode_castle_wk(pos->castle);
+    int bk = decode_castle_bk(pos->castle);
+    int wq = decode_castle_wq(pos->castle);
+    int bq = decode_castle_bq(pos->castle);
+    //if blacks turn white rook captured
+    if (pos->turn) {
+      if (target == a1) {
+        wq = 0;
+      }
+      else if (target == h1) {
+        wk = 0;
+      }
+    }
+    else {
+      if (target == a8) {
+        bq = 0;
+      }
+      else if (target == h8) {
+        bk = 0;
+      }
+    }
+    pos->castle = encode_castle(wk, wq, bk, bq);
+  }
+
+
+
+  //make move
+  if (!promotion) {
+    if (!capture) {
       //quiet and double push 000*
-      if (y==0) {
-        pop_bit(to.boards[color], source);
-        pop_bit(to.boards[piece], source);
-        set_bit(to.boards[color], target);
-        set_bit(to.boards[piece], target);
-        move_square(to, source, target);
-
-
+      if (!y) {
+        make_quiet(pos, source, target);
         //double push 0001
-        if (z==1) to.enpassant = encode_enpassant(1, get_rank(target));
+        if (z) {
+          //target rank = target % 8
+          enpassant = encode_enpassant(1, target % 8);
+        }
       }
       //castle 001*
       else {
+          //get current castle flags
+          int wk = decode_castle_wk(pos->castle);
+          int bk = decode_castle_bk(pos->castle);
+          int wq = decode_castle_wq(pos->castle);
+          int bq = decode_castle_bq(pos->castle);
         //king castle 0011
-        if (z==1) {
+        if (z) {
           //white
-          if (color == white) {
+          if (!pos->turn) {
             //king e1->g1, rook h1->f1
-            pop_bit(to.boards[king], e1);
-            pop_bit(to.boards[white], e1);
-            set_bit(to.boards[king], g1);
-            set_bit(to.boards[white], g1);
-            move_square(to, e1, g1);
-
-            pop_bit(to.boards[rook], h1);
-            pop_bit(to.boards[white], h1);
-            set_bit(to.boards[rook], f1);
-            set_bit(to.boards[white], f1);
-            move_square(to, h1, f1);
-
-            //illegal move
-            if (sq_attacked(to, g1)||sq_attacked(to, f1)) {
-              printf("ILLEGAL MOVE");
-              empty_position(&to);
-              return to;
-            }
-
+            illegal = make_wk_castle(pos);
+            wk = 0;
+            wq = 0;
+            pos->castle = encode_castle(wk, wq, bk, bq);
           }
           //black
           else {
             //king e8->g8, rook h8->f8
-            pop_bit(to.boards[king], e8);
-            pop_bit(to.boards[black], e8);
-            set_bit(to.boards[king], g8);
-            set_bit(to.boards[black], g8);
-            move_square(to, e8, g8);
-
-
-            pop_bit(to.boards[rook], h8);
-            pop_bit(to.boards[black], h8);
-            set_bit(to.boards[rook], f8);
-            set_bit(to.boards[black], f8);
-            move_square(to, h8, f8);
-            
-            //illegal move
-            if (sq_attacked(to, g8)||sq_attacked(to, f8)) {
-              printf("ILLEGAL MOVE");
-              empty_position(&to);
-              return to;
-            }
+            illegal = make_bk_castle(pos);
+            bk = 0;
+            bq = 0;
+            pos->castle = encode_castle(wk, wq, bk, bq);
           }
         }
         //queen castle 0010
         else {
           //white
-          if (color == white) {
+          if (!pos->turn) {
             //king e1->c1, rook a1->d1
-            pop_bit(to.boards[king], e1);
-            pop_bit(to.boards[white], e1);
-            set_bit(to.boards[king], c1);
-            set_bit(to.boards[white], c1);
-            move_square(to, e1, c1);
-
-
-            pop_bit(to.boards[rook], a1);
-            pop_bit(to.boards[white], a1);
-            set_bit(to.boards[rook], d1);
-            set_bit(to.boards[white], d1);
-            move_square(to, a1, d1);
-
-            //illegal move
-            if (sq_attacked(to, c1)||sq_attacked(to, d1)) {
-              printf("ILLEGAL MOVE");
-              empty_position(&to);
-              return to;
-            }
-
+            illegal = make_wq_castle(pos);
+            wk = 0;
+            wq = 0;
+            pos->castle = encode_castle(wk, wq, bk, bq);
           }
           //black
           else {
             //king e8->c8, rook a8->d8
-            pop_bit(to.boards[king], e8);
-            pop_bit(to.boards[black], e8);
-            set_bit(to.boards[king], c8);
-            set_bit(to.boards[black], c8);
-            move_square(to, e8, c8);
-
-            pop_bit(to.boards[rook], a8);
-            pop_bit(to.boards[black], a8);
-            set_bit(to.boards[rook], d8);
-            set_bit(to.boards[black], d8);
-            move_square(to, a8, d8);
-            
-            //illegal move
-            if (sq_attacked(to, c8)||sq_attacked(to, d8)) {
-              printf("ILLEGAL MOVE");
-              empty_position(&to);
-              return to;
-            }
-
+            illegal = make_bq_castle(pos);
+            bk = 0;
+            bq = 0;
+            pos->castle = encode_castle(wk, wq, bk, bq);
           }
         }
       }
     }
     //capture 01**
     else {
-      capture_piece = get_piece_sq(from, target);
-      pop_bit(to.boards[color], source);
-      pop_bit(to.boards[piece], source);
-
-      pop_bit(to.boards[get_opposite(color)], target);
-      pop_bit(to.boards[capture_piece], target);
-
-      set_bit(to.boards[color], target);
-      set_bit(to.boards[piece], target);
-
-      move_square(to, source, target);
+      //enpassant 0101
+      if (z) {
+        //printf("ENPASSANT");
+        gl[pos->index].captured = pawn;
+        make_enpassant(pos, gl, source, target);
+      }
+      //capture 01*0 
+      else {
+        gl[pos->index].captured = get_piece_sq(*pos, target);
+        make_capture(pos, gl, source, target);
+      }
     }
   }
   //promotions
   else {
     int promotion = promotion_piece(y, z);
     //quiet promotion 10**
-    if (capture == 0) {
-      pop_bit(to.boards[color], source);
-      pop_bit(to.boards[piece], source);
-      set_bit(to.boards[color], target);
-      set_bit(to.boards[promotion], target);
-      promotion_square(to, source, target, promotion);
+    if (!capture) {
+      make_quiet_promotion(pos, source, target, promotion);
     }
     //capture promotion 11**
     else {
-      capture_piece = get_piece_sq(from, target);
-      pop_bit(to.boards[color], source);
-      pop_bit(to.boards[piece], source);
-
-      pop_bit(to.boards[get_opposite(color)], target);
-      pop_bit(to.boards[capture_piece], target);
-
-      set_bit(to.boards[color], target);
-      set_bit(to.boards[promotion], target);
-      promotion_square(to, source, target, promotion);
+      gl[pos->index].captured = get_piece_sq(*pos, target);
+      make_capture_promotion(pos, gl, source, target, promotion);
     }
   }
-  //Illegal moves
-  //check if move leaves king in check
-  U64 king_bb = get_bb(to.boards[color], to.boards[king]);
+  //check if move is illegal, leaves king in check (piece is pinned), or castling not available
+  U64 king_bb = get_bb(pos->boards[pos->turn], pos->boards[king]);
   int king_sq = bit_scan_forward(king_bb);
-  if (sq_attacked(to, king_sq)) {
-    //move ilegal
-    //best way to remove move
-    printf("ILLEGAL MOVE");
-    empty_position(&to);
-    return to;
+  if (sq_attacked(*pos, king_sq)) {
+    illegal = 1;
   }
+  //switch turn, set new enpassant, and increment index
+  pos->turn = get_opposite(pos->turn);
+  pos->enpassant = enpassant;
+  pos->index++;
 
-  to.turn = get_opposite(from.turn);
-  return to;
+  return illegal;
 }
 
+/*****************************************************************************\
+                                  UNMAKE
+\*****************************************************************************/
 
-U64 perft(position start, int depth) {
+//index should start poiting at the next move
+void unmake(position *pos, gamelist *gl) {
+
+  //erase current move
+  gl[pos->index].move = 0;
+  gl[pos->index].castle = 0;
+  gl[pos->index].enpassant = 0;
+  gl[pos->index].captured = 0;
+
+  //move to correct move and get move
+  pos->index--;
+  int move = gl[pos->index].move;
+
+  //get irreversible data
+  pos->castle = gl[pos->index].castle;
+  pos->enpassant = gl[pos->index].enpassant;
+
+  //switch back turn
+  pos->turn = get_opposite(pos->turn);
   
-  U64 nodes = 0x0ULL;
-  position to = start;
-  move_list moves;
+  //decode source and target sq
+  int source = decode_source(move);
+  int target = decode_target(move);
 
-  if (depth == 0) return 0x1ULL;
+  //decode move flags
+  int promotion = decode_promotion(move);
+  int capture = decode_capture(move);
+  int y = decode_y(move);
+  int z = decode_z(move);
 
-  moves = generate_moves(start);
-
-  for (int c = 0; c < moves.count; c++) {
-    to = make(start, moves.moves[c]);
-    //if illegal move
-    if (to.boards[white] != 0x0ULL) {
-      nodes += perft(to, depth - 1);
+  //0***
+  if (!promotion) {
+    //00**
+    if (!capture) {
+      //000* quiet and double push 
+      if (!y) {
+        //reverse target and source to unmake quiet
+        make_quiet(pos, target, source);
+        //no need to worry about double push
+      }
+      //001* castle 
+      else {
+        //king castle 0011
+        if (z) {
+          //white
+          if (!pos->turn) {
+            //king e1->g1, rook h1->f1
+            unmake_wk_castle(pos);
+          }
+          //black
+          else {
+            //king e8->g8, rook h8->f8
+            unmake_bk_castle(pos);
+          }
+        }
+        //queen castle 0010
+        else {
+          //white
+          if (!pos->turn) {
+            //king e1->c1, rook a1->d1
+            unmake_wq_castle(pos);
+          }
+          //black
+          else {
+            //king e8->c8, rook a8->d8
+            unmake_bq_castle(pos);
+          }
+        }
+      }
+    }
+    //captures 01**
+    else {
+      //enpassant 0101
+      if (z) {
+        unmake_enpassant(pos, gl, source, target);
+      }
+      //capture 0100
+      else {
+        unmake_capture(pos, gl, source, target);
+      }
     }
   }
-  return nodes;
-}
-
-void play(position position) {
-  int move = 0;
-  int color = position.turn;
-  move_list moves;
-  while (move != -1) {
-
-    //print board and moves
-    printf("\n\n");
-    printcolor(color);
-    printf("To Move:\n\n");
-    printgb(position);
-    moves = generate_moves(position);
-    printmoves(moves);
-
-    //get move from command line
-    printf("\n\nEnter Move Number: ");
-    scanf("%d", &move);
-
-
-    if (move != -1) {
-      //make move
-      position = make(position, moves.moves[move]);
-      //switch color
-      color = get_opposite(color);
+  //promotions
+  else {
+    //quiet promotion 10**
+    if (!capture) {
+      unmake_quiet_promotion(pos, source, target);
     }
-
-  }
+    //capture promotion 11**
+    else {
+      unmake_capture_promotion(pos, gl, source, target);
+    }
+  }  
 }
-
 
 

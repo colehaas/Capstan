@@ -30,6 +30,7 @@ int square_piece(int index) {
 }
 
 
+
 int get_square_color(position position, int sq) {
   return square_color(position.square[sq]);
 }
@@ -93,29 +94,31 @@ void bb_to_square(position *position) {
   }
 }
 
-void remove_square(position position, int sq) {
-  position.square[sq] = 0;
+void remove_square(position *position, int sq) {
+  position->square[sq] = 0;
 }
 
-void add_square(position position, int sq, int color, int piece) {
-  position.square[sq] = square_index(color, piece);
+void add_square(position *position, int sq, int color, int piece) {
+  position->square[sq] = square_index(color, piece);
 }
 
-void move_square(position position, int source, int target) {
-  position.square[target] = position.square[source];
-  position.square[source] = 0;
+void move_square(position *position, int source, int target) {
+  position->square[target] = position->square[source];
+  position->square[source] = 0;
 }
 
-void promotion_square(position position, int source, int target, int piece) {
-  int color = square_color(position.square[source]);
+void promotion_square(position *position, int source, int target, int piece) {
+  int color = square_color(position->square[source]);
   int index = square_index(color, piece);
-  position.square[target] = index;
-  position.square[source] = 0;
+  position->square[target] = index;
+  position->square[source] = 0;
 }
+
+
 
 int sq_attacked_by_pawn(position position, int sq) {
   //int color = position.turn;
-  int color = get_square_color(position, sq);
+  int color = position.turn;
   //index of attacking piece
   int attacker = 0;
   int attack_sq = 0;
@@ -147,7 +150,7 @@ int sq_attacked_by_pawn(position position, int sq) {
 
 int sq_attacked_by_horse(position position, int sq) {
   //int color = position.turn;
-  int color = get_square_color(position, sq);
+  int color = position.turn;
   //index of opposite colored horse
   int attacker = square_index(get_opposite(color), horse);
   int attack_sq = 0;
@@ -163,8 +166,8 @@ int sq_attacked_by_horse(position position, int sq) {
 }
 
 int sq_attacked_by_king(position position, int sq) {
-  //int color = position.turn;
-  int color = get_square_color(position, sq);
+  int color = position.turn;
+  //int color = get_square_color(position, sq);
   //index of opposite colored king
   int attacker = square_index(get_opposite(color), king);
   int attack_sq = 0;
@@ -180,8 +183,8 @@ int sq_attacked_by_king(position position, int sq) {
 }
 
 int sq_attacked_by_bishop(position position, int sq) {
-  //int color = position.turn;
-  int color = get_square_color(position, sq);
+  int color = position.turn;
+  //int color = get_square_color(position, sq);
   //index of opposite colored bishop
   int attacker = square_index(get_opposite(color), bishop);
   int attack_sq = 0;
@@ -198,8 +201,8 @@ int sq_attacked_by_bishop(position position, int sq) {
 }
 
 int sq_attacked_by_rook(position position, int sq) {
-  //int color = position.turn;
-  int color = get_square_color(position, sq);
+  int color = position.turn;
+  //int color = get_square_color(position, sq);
   //index of opposite colored rook
   int attacker = square_index(get_opposite(color), rook);
   int attack_sq = 0;
@@ -216,9 +219,9 @@ int sq_attacked_by_rook(position position, int sq) {
 }
 
 int sq_attacked_by_queen(position position, int sq) {
-  //int color = position.turn;
-  int color = get_square_color(position, sq);
-  //index of opposite colored horse
+  int color = position.turn;
+  //int color = get_square_color(position, sq);
+  //index of opposite colored queen
   int attacker = square_index(get_opposite(color), queen);
   int attack_sq = 0;
   int count = 0;
