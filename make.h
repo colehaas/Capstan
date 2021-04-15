@@ -17,10 +17,11 @@
 #include "generate.h"
 
 
-
 /*
 castle, enpassant, captured are irreversible
 and held onto for unmake function
+
+MAYBE: eventually merge into position
 */
 
 typedef struct {

@@ -19,6 +19,12 @@ enum {
   white, black, pawn, horse, king, queen, rook, bishop
 };
 
+enum {
+  p, h, k, q, r, b, P, H, K, Q, R, B
+};
+
+
+
 /***** CASTLING ENCODING FORMAT ******\
   
   wk: white king
@@ -40,6 +46,13 @@ enum {
 #define decode_castle_bk(castle) ((castle & 4) >> 2)
 #define decode_castle_bq(castle) ((castle & 8) >> 3)
 
+/* void encode_castle(unsigned int wk, unsigned int wq, unsigned int bk, unsigned int bq);
+void decode_castle_wk(int castle);
+void decode_castle_wq(int castle);
+void decode_castle_bk(int castle);
+void decode_castle_bq(int castle); */
+
+
 /***** ENPASSANT ENCODING FORMAT *****\
   f: flag
   r: rank
@@ -47,7 +60,7 @@ enum {
 \*************************************/
 
 //probably not useful
-enum rank
+/* enum rank
 {
     a,
     b,
@@ -57,7 +70,7 @@ enum rank
     f,
     g,
     h
-};
+}; */
 
 //enpassant encoding macros
 #define encode_enpassant(flag, rank) (flag) | (rank << 1)

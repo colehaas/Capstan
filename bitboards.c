@@ -10,7 +10,7 @@
 
 #include "bitboards.h"
 
-U64 a_file = 0x0101010101010101ULL;
+U64 file_a = 0x0101010101010101ULL;
 U64 b_file = 0x0202020202020202ULL;
 U64 g_file = 0x4040404040404040ULL;
 U64 h_file = 0x8080808080808080ULL;
@@ -38,10 +38,10 @@ U64 dark = 0xAA55AA55AA55AA55ULL;
 
 
 //not file functions
-U64 not_a() {return ~a_file;}
+U64 not_a() {return ~file_a;}
 U64 not_h() {return ~h_file;}
 
-U64 not_ab() {return ~(a_file | b_file);}
+U64 not_ab() {return ~(file_a | b_file);}
 U64 not_gh() {return ~(g_file | h_file);}
 
 /***********************************************\
@@ -104,3 +104,20 @@ int get_opposite(int color) {
     return color ^ 1;
 }
 
+
+//print bitboard
+void printbb(U64 bb) {
+  int r, f;
+
+  for (r = 7; r >= 0; r--) {
+    for (f = 0; f < 8; f++) {
+      int sq = r*8+f;
+      if (!f) printf("%d   ", r+1);
+      printf("%d  ", get_bit(bb, sq) ? 1 : 0);
+    }
+    printf("\n");
+  }
+  printf("\n    a  b  c  d  e  f  g  h\n\n");
+  printf("    bitboard: %llX\n\n", bb);
+
+  }

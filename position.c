@@ -72,14 +72,14 @@ void parse(position *pos, char *fen) {
       ['k'] = king};
       
   int char_files[] = {
-      ['a'] = a,
-      ['b'] = b,
-      ['c'] = c,
-      ['d'] = d,
-      ['e'] = e,
-      ['f'] = f,
-      ['g'] = g,
-      ['h'] = h};
+      ['a'] = 0,
+      ['b'] = 1,
+      ['c'] = 2,
+      ['d'] = 3,
+      ['e'] = 4,
+      ['f'] = 5,
+      ['g'] = 6,
+      ['h'] = 7};
 
   init_position(pos);
 
@@ -182,8 +182,6 @@ void parse(position *pos, char *fen) {
   }
 
 }
-
-
 
 void printpos(position pos) {
   

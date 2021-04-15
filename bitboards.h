@@ -16,7 +16,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-//define bitboard datatype
+//define 64-bit datatype
+//used for bitboards and hash
 #define U64 unsigned long long
 
 //bitboard squares (Little-Endian-Rank-File)
@@ -37,7 +38,7 @@ enum squares {
 \*********************/
 
 //files
-extern U64 a_file;
+extern U64 file_a;
 extern U64 b_file;
 extern U64 g_file;
 extern U64 h_file;
@@ -73,7 +74,7 @@ U64 not_gh();
 
 /***********************************************\
  * ===========================================*
-                Bit Manipulations
+                Bit Manipulations 
  * =========================================== *
 \***********************************************/
 
@@ -89,5 +90,7 @@ int pop_count(U64 bb);
 int bit_scan_forward(U64 bb);
 int bit_scan_reverse(U64 bb);
 int get_opposite(int color);
+
+void printbb(U64 bb);
 
 #endif

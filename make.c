@@ -504,12 +504,14 @@ int make(position *pos, gamelist *gl, int move) {
       make_capture_promotion(pos, gl, source, target, promotion);
     }
   }
+
   //check if move is illegal, leaves king in check (piece is pinned), or castling not available
   U64 king_bb = get_bb(pos->boards[pos->turn], pos->boards[king]);
   int king_sq = bit_scan_forward(king_bb);
   if (sq_attacked(*pos, king_sq)) {
     illegal = 1;
   }
+  
   //switch turn, set new enpassant, and increment index
   pos->turn = get_opposite(pos->turn);
   pos->enpassant = enpassant;
