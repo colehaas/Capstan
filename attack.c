@@ -1,24 +1,24 @@
-/*************************************\
- * ================================= *
-  +\^&%!%$/?^&\$!%^&%+\!!^`\?!%\+^\?  
-  %!%^`$!"&!$         ^!>%!"$%!%\!%
-  ^+\$%^!$!   attack.c   ?|&!^$&%?`\>
-  ^\?&%+\!$%!         ^`$!"$%\!%$!%$
-  ^$%^$%`\]!^+\^&`$!"$!`\$!\$%!%\^<!
- * ================================= *
-\*************************************/
+/*****************************************************************************\
+ * ========================================================================= *   
+  +\^&%!%$/?^&\$!%^^&!<!%\+^\&%+\!!^`\?^%?<}%^&!^&!<!%\+^\^&!<!%\+^\?\?!%\+^
+  %!%^`$&+"&^%^\`\^&!<!%\+^\"&^%              &!$^!>%!"$^%?<}%^&$^%?<}%^&\!%
+  ^+\&+\^&!`\%$"&^%^&!<!+$%^!      attack.c      !^$\!!^^%?<^&!<!\+^\}&+\^&!
+  ^\?&%"&^%\"&^%^%&$^&!<!%\+^\^&              !<!^<&!+\!$%$!"$%\\!!^`\?!%\+^
+  ^$%^$%`\]!^\!!^`\?!%\+^+\^&`$\$!"$!`\$!\$%\!!^`\?`\%$^&!<\?!%\+^&%?`\>!!%\
+ * ========================================================================= *
+\*****************************************************************************/
 
 #include "attack.h"
 
 /***************************\
-			    ATTACKS       
+			    ATTACKS
 \***************************/
 
+//what kind of variable to make these
 U64 ray_attacks[8][64];
 U64 pawn_attacks[2][64];
 U64 horse_attacks[64];
 U64 king_attacks[64];
-
 
 //pawn attack
 //used to fill up table [2][64] ([color][square])
@@ -64,7 +64,7 @@ U64 king_attack(int sq) {
   U64 attack = 0ULL;
   U64 bb = 0ULL;
   set_bit(bb, sq);
-  
+
   attack |= ((bb >> 8)); //S
   attack |= ((bb << 8)); //N
 
@@ -81,7 +81,7 @@ U64 king_attack(int sq) {
 //also used for queen attacks
 
 U64 file_attack(int sq) {
-  return a_file << (sq & 7);
+  return file_a << (sq & 7);
 }
 
 U64 north_attack(int sq) {
@@ -179,7 +179,7 @@ void init_attack() {
 
 
 /***************************\
-			  MOVES   
+			  MOVES
 \***************************/
 
 U64 positive_ray_attack(U64 occupied, int dir, int sq) {
@@ -197,9 +197,9 @@ U64 negative_ray_attack(U64 occupied, int dir, int sq) {
 }
 
 U64 get_bishop_attack(U64 occupied, int sq) {
-  
+
   U64 attacks = 0x0ULL;
-  
+
   attacks = positive_ray_attack(occupied, NE, sq);
   attacks |= positive_ray_attack(occupied, NW, sq);
   attacks |= negative_ray_attack(occupied, SE, sq);
@@ -209,9 +209,9 @@ U64 get_bishop_attack(U64 occupied, int sq) {
 }
 
 U64 get_rook_attack(U64 occupied, int sq) {
-  
+
   U64 attacks = 0x0ULL;
-  
+
   attacks = positive_ray_attack(occupied, N, sq);
   attacks |= positive_ray_attack(occupied, E, sq);
   attacks |= negative_ray_attack(occupied, S, sq);

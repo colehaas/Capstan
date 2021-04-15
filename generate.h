@@ -77,7 +77,7 @@ typedef struct  {
 
 
 //print bitboard
-void printbb(U64 bb);
+
 void printpiecepretty(int color, int piece);
 void printgb(position position);
 void printsq(int sq);

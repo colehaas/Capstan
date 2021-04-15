@@ -1,2 +1,18 @@
 could make gamelist just have a pointer to the previous gamelist
     an only backwards reversed list
+
+
+bitboards -> defines bitboards and how to manipulate them
+square -> defines square and how to manipulate them
+
+
+
+
+alpha beta search
+
+zorbist hashing
+
+
+
+move ordering 
+recapture
