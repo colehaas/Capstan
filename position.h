@@ -86,7 +86,7 @@ typedef struct
   unsigned int square[64];  
   //color to move
   unsigned short turn;
-  //which castles can done
+  //which castles can be done
   unsigned short castle;
   //current enpassantable pawns
   unsigned short enpassant;
