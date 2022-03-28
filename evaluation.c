@@ -18,6 +18,6 @@ int value(position pos) {
 }
 
 
-int evalulation(position pos) {
+int evaluation(position pos) {
     return value(pos);
 }

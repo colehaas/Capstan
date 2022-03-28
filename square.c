@@ -236,8 +236,6 @@ int sq_attacked_by_queen(position position, int sq) {
   return count; 
 }
 
-
-
 //returns # if attacked, 0 if not
 int sq_attacked(position position, int sq) {
   int count = 0;

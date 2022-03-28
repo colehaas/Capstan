@@ -13,13 +13,16 @@
 #include "square.h"
 #include "perft.h"
 #include "evaluation.h"
-
+#include "timer.h"
 
 
 int main() {
     
     printf("\n\nhello\n\n");
-    //perft_test("perft.txt", 100, 5);
+    uint64_t start = ns();
+    perft_test("perft.txt", 20, 3);
+    uint64_t stop = ns();
+    printf("time: %lld", stop - start);
     position pos;
 
     //initalize attack arrays
