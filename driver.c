@@ -38,7 +38,7 @@ int main() {
     parse(&pos, "r4B2/p1nr1kp1/1pN1pn1p/3p1p2/2PP4/1PN3PP/P4PK1/2RR4 b - - 0 24");
     bb_to_square(&pos);
 
-    gamelist game[256];
+    undo_list game[256];
     //move_list moves;
     
     printpos(pos);

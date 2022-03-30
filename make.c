@@ -10,15 +10,6 @@
  
 #include "make.h"
 
-
-void init_gamelist(gamelist *gamelist) {
-  gamelist->move = 0;
-  gamelist->castle = encode_castle(1, 1, 1, 1);
-  gamelist->enpassant = encode_enpassant(0, 0);
-  gamelist->captured = 0;
-}
-
-
 /*****************************************************************************\
                              HELPER FUNCTIONS
 \*****************************************************************************/
@@ -40,7 +31,7 @@ void make_quiet(position *pos, int source, int target) {
   add_square(pos, target, color, piece);
 }
 
-void make_capture(position *pos, gamelist *gl, int source, int target) {
+void make_capture(position *pos, int source, int target) {
   
   //get source piece
   int color = get_square_color(*pos, source);
@@ -48,7 +39,7 @@ void make_capture(position *pos, gamelist *gl, int source, int target) {
 
   //get capture piece and save in gamelist
   int capture = get_square_piece(*pos, target);
-  gl[pos->index].captured = capture;
+  pos->undo[pos->index].captured = capture;
 
   //remove source piece from source sq
   pop_bit(pos->boards[color], source);
@@ -65,7 +56,7 @@ void make_capture(position *pos, gamelist *gl, int source, int target) {
   move_square(pos, source, target);
 }
 
-void make_enpassant(position *pos, gamelist *gl, int source, int target) {
+void make_enpassant(position *pos, int source, int target) {
   int color = get_square_color(*pos, source);
   int piece = get_square_piece(*pos, source);
   //get enpassant sq
@@ -77,7 +68,7 @@ void make_enpassant(position *pos, gamelist *gl, int source, int target) {
     enpassant = get_sq(decode_enpassant_rank(pos->enpassant), 4);
   }
   
-  gl[pos->index].captured = pawn;
+  pos->undo[pos->index].captured = pawn;
 
   //remove source piece from source sq
   pop_bit(pos->boards[color], source);
@@ -106,11 +97,11 @@ void make_quiet_promotion(position *pos, int source, int target, int promotion) 
   promotion_square(pos, source, target, promotion);
 }
 
-void make_capture_promotion(position *pos, gamelist *gl, int source, int target, int promotion) {  
+void make_capture_promotion(position *pos, int source, int target, int promotion) {  
   int color = get_square_color(*pos, source);
   int piece = get_square_piece(*pos, source);
   int capture = get_square_piece(*pos, target);
-  gl[pos->index].captured = capture;
+  pos->undo[pos->index].captured = capture;
   //remove source
   pop_bit(pos->boards[color], source);
   pop_bit(pos->boards[piece], source);
@@ -162,7 +153,7 @@ int make_bq_castle(position *pos) {
 }
 
 
-void unmake_capture(position *pos, gamelist *gl, int source, int target) {
+void unmake_capture(position *pos, int source, int target) {
 
   //current state: source piece on target sq, capture piece absent
 
@@ -171,7 +162,7 @@ void unmake_capture(position *pos, gamelist *gl, int source, int target) {
   int piece = get_square_piece(*pos, target);
 
   //get capture piece from memory
-  int capture = gl[pos->index].captured;
+  int capture = pos->undo[pos->index].captured;
 
   //remove source piece off target sq
   pop_bit(pos->boards[color], target);
@@ -189,16 +180,16 @@ void unmake_capture(position *pos, gamelist *gl, int source, int target) {
 
 }
 
-void unmake_enpassant(position *pos, gamelist *gl, int source, int target) {
+void unmake_enpassant(position *pos, int source, int target) {
   int color = get_square_color(*pos, target);
   int piece = get_square_piece(*pos, target);
   //get enpassant sq
   int enpassant;
   if (color == white) {
-    enpassant = get_sq(decode_enpassant_rank(gl[pos->index].enpassant), 5);
+    enpassant = get_sq(decode_enpassant_rank(pos->undo[pos->index].enpassant), 5);
   }
   else {
-    enpassant = get_sq(decode_enpassant_rank(gl[pos->index].enpassant), 4);
+    enpassant = get_sq(decode_enpassant_rank(pos->undo[pos->index].enpassant), 4);
   }
 
   //remove source piece from target sq
@@ -238,7 +229,7 @@ void unmake_quiet_promotion(position *pos, int source, int target) {
   
 }
 
-void unmake_capture_promotion(position *pos, gamelist *gl, int source, int target) {
+void unmake_capture_promotion(position *pos, int source, int target) {
 
   //current state: source piece gone(pawn), target piece gone
   //promotion piece on target sq
@@ -248,7 +239,7 @@ void unmake_capture_promotion(position *pos, gamelist *gl, int source, int targe
   //get promtion piece
   int piece = get_square_piece(*pos, target);
   //get capture piece from memory
-  int capture = gl[pos->index].captured;
+  int capture = pos->undo[pos->index].captured;
 
   //remove promotion piece off target sq
   pop_bit(pos->boards[color], target);
@@ -305,7 +296,7 @@ void unmake_bq_castle(position *pos) {
 
 //returns 1 if illegal, else 0
 //index should start pointing at the move being made
-int make(position *pos, gamelist *gl, int move) {
+int make(position *pos, int move) {
   
   //0 if legal, 1 if illegal
   int illegal = 0;
@@ -322,9 +313,9 @@ int make(position *pos, gamelist *gl, int move) {
   
   //remember move
   //get captured later
-  gl[pos->index].move = move;
-  gl[pos->index].enpassant = pos->enpassant;
-  gl[pos->index].castle = pos->castle;
+  pos->undo[pos->index].move = move;
+  pos->undo[pos->index].enpassant = pos->enpassant;
+  pos->undo[pos->index].castle = pos->castle;
 
   //keep track of enpassant through move
   int enpassant = 0;
@@ -466,13 +457,13 @@ int make(position *pos, gamelist *gl, int move) {
       //enpassant 0101
       if (z) {
         //printf("ENPASSANT");
-        gl[pos->index].captured = pawn;
-        make_enpassant(pos, gl, source, target);
+        pos->undo[pos->index].captured = pawn;
+        make_enpassant(pos, source, target);
       }
       //capture 01*0 
       else {
-        gl[pos->index].captured = get_piece_sq(*pos, target);
-        make_capture(pos, gl, source, target);
+        pos->undo[pos->index].captured = get_piece_sq(*pos, target);
+        make_capture(pos, source, target);
       }
     }
   }
@@ -485,8 +476,8 @@ int make(position *pos, gamelist *gl, int move) {
     }
     //capture promotion 11**
     else {
-      gl[pos->index].captured = get_piece_sq(*pos, target);
-      make_capture_promotion(pos, gl, source, target, promotion);
+      pos->undo[pos->index].captured = get_piece_sq(*pos, target);
+      make_capture_promotion(pos, source, target, promotion);
     }
   }
 
@@ -510,21 +501,21 @@ int make(position *pos, gamelist *gl, int move) {
 \*****************************************************************************/
 
 //index should start poiting at the next move
-void unmake(position *pos, gamelist *gl) {
+void unmake(position *pos) {
 
   //erase current move
-  gl[pos->index].move = 0;
-  gl[pos->index].castle = 0;
-  gl[pos->index].enpassant = 0;
-  gl[pos->index].captured = 0;
+  pos->undo[pos->index].move = 0;
+  pos->undo[pos->index].castle = 0;
+  pos->undo[pos->index].enpassant = 0;
+  pos->undo[pos->index].captured = 0;
 
   //move to correct move and get move
   pos->index--;
-  int move = gl[pos->index].move;
+  int move = pos->undo[pos->index].move;
 
   //get irreversible data
-  pos->castle = gl[pos->index].castle;
-  pos->enpassant = gl[pos->index].enpassant;
+  pos->castle = pos->undo[pos->index].castle;
+  pos->enpassant = pos->undo[pos->index].enpassant;
 
   //switch back turn
   pos->turn = get_opposite(pos->turn);
@@ -583,11 +574,11 @@ void unmake(position *pos, gamelist *gl) {
     else {
       //enpassant 0101
       if (z) {
-        unmake_enpassant(pos, gl, source, target);
+        unmake_enpassant(pos, source, target);
       }
       //capture 0100
       else {
-        unmake_capture(pos, gl, source, target);
+        unmake_capture(pos, source, target);
       }
     }
   }
@@ -599,7 +590,7 @@ void unmake(position *pos, gamelist *gl) {
     }
     //capture promotion 11**
     else {
-      unmake_capture_promotion(pos, gl, source, target);
+      unmake_capture_promotion(pos, source, target);
     }
   }  
 }

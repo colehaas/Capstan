@@ -50,13 +50,16 @@ void perft_test(char *in, int count, int depth) {
 
     //set position
     position pos;
-    gamelist game[256];
     for (int c = 0; c < 8; c++) pos.boards[c] = 0x0ULL;
     for (int sq = 0; sq < 64; sq++) pos.square[sq] = 0;
     pos.turn = white;
     pos.castle = encode_castle(1, 1, 1, 1);
     pos.enpassant = encode_enpassant(0, 0);
     pos.index = 0;
+    pos.undo->move = 0;
+    pos.undo->castle = encode_castle(1, 1, 1, 1);
+    pos.undo->enpassant = encode_enpassant(0, 0);
+    pos.undo->captured = 0;
     parse(&pos, fen);
     bb_to_square(&pos);
     position position = pos;
@@ -72,7 +75,7 @@ void perft_test(char *in, int count, int depth) {
     U64 p;
     for (int d = 0; d < depth; d++) {
       pos = position;
-      if ((p = perft(&pos, game, d+1)) != expected[d]) {
+      if ((p = perft(&pos, d+1)) != expected[d]) {
         
         printf("\n\n\n\n@line %d @depth %d", c+1, d+1);
         printf("\n%s", fen);
@@ -90,7 +93,7 @@ void perft_test(char *in, int count, int depth) {
 
 }
 
-U64 perft(position *pos, gamelist *gl, int depth) {
+U64 perft(position *pos, int depth) {
   
   U64 nodes = 0x0ULL;
   move_list moves;
@@ -102,15 +105,15 @@ U64 perft(position *pos, gamelist *gl, int depth) {
   
   for (int c = 0; c < size; c++) {
     //if legal move
-    if (!make(pos, gl, moves.moves[c])) {
-      nodes += perft(pos, gl, depth - 1);
+    if (!make(pos, moves.moves[c])) {
+      nodes += perft(pos, depth - 1);
     }
-    unmake(pos, gl);
+    unmake(pos);
   }
   return nodes;
 }
 
-void play(position *pos, gamelist *gl) {
+void play(position *pos) {
   
   int move = 0;
   int count = 0;
@@ -124,17 +127,17 @@ void play(position *pos, gamelist *gl) {
     moves = generate_moves(*pos);
     count = 0;
     for (int m = 0; m < moves.count; m++) {
-      if (!make(pos, gl, moves.moves[m])) {
+      if (!make(pos, moves.moves[m])) {
         printf("\n%.3d:  ", m);
         printmove(moves.moves[m]);
-        printf("   perft1: %lld   perft2: %lld", perft(pos, gl, 1), perft(pos, gl, 2));
+        printf("   perft1: %lld   perft2: %lld", perft(pos, 1), perft(pos, 2));
         count++;
       }
       else {
         printf("\nXXX:  ");
         printmove(moves.moves[m]);
       }
-      unmake(pos, gl);
+      unmake(pos);
     }
     printf("\n\nmoves at position: %d\n\n", count);
 
@@ -144,12 +147,12 @@ void play(position *pos, gamelist *gl) {
     scanf("%d", &move);
     if (move == -2) {
       printf("\n\nUNMAKING MOVE\n\n");
-      unmake(pos, gl);
+      unmake(pos);
     }
     //make move
-    else if (make(pos, gl, moves.moves[move])) {
+    else if (make(pos, moves.moves[move])) {
       printf("\n\nILLEGAL MOVE\n\n");
-      unmake(pos, gl);
+      unmake(pos);
     }
   }
 }
