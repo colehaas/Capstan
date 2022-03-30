@@ -15,6 +15,8 @@
 #include "evaluation.h"
 #include "timer.h"
 
+#include "search.h"
+
 
 int main() {
     
@@ -31,7 +33,9 @@ int main() {
     init_position(&pos);
 
     //get position from fen
-    parse(&pos, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+    //parse(&pos, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+
+    parse(&pos, "r4B2/p1nr1kp1/1pN1pn1p/3p1p2/2PP4/1PN3PP/P4PK1/2RR4 b - - 0 24");
     bb_to_square(&pos);
 
     gamelist game[256];
@@ -43,12 +47,14 @@ int main() {
     printf("\n\nvalue: %d", val);
     //play(&pos, game);
 
-/*     printf("\n\nperft results:\n\n");
-    for (int i = 1; i < 7; i++) {
+    alphabeta(-30000,30000,3,&pos);
+/*
+    printf("\n\nperft results:\n\n");
+    for (int i = 1; i < 6; i++) {
         U64 result = perft(&pos, game, i);
         printf("%2d: %lld\n", i, result);
-    } */
-  
+    }
+*/  
     printf("\n\n\n");
     return 0;
 }

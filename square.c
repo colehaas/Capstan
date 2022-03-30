@@ -29,8 +29,6 @@ int square_piece(int index) {
   return (index % 8);
 }
 
-
-
 int get_square_color(position position, int sq) {
   return square_color(position.square[sq]);
 }
