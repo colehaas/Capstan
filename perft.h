@@ -9,8 +9,8 @@
 
 U64 perft_enpassant(int move);
 void perft_test(char *in, int count, int depth);
-U64 perft(position *pos, gamelist *gl, int depth);
-void play(position *pos, gamelist *gl);
+U64 perft(position *pos, int depth);
+void play(position *pos);
 
 
 #endif

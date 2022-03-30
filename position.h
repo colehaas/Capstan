@@ -14,6 +14,8 @@
 #include "bitboards.h"
 
 
+#define MAXMOVES 256
+
 //colors & pieces
 enum {
   white, black, pawn, horse, king, queen, rook, bishop
@@ -78,8 +80,27 @@ void decode_castle_bq(int castle); */
 #define decode_enpassant_rank(enpassant) ((enpassant & 0xE) >> 1)
 
 
-typedef struct
-{
+/*
+castle, enpassant, captured are irreversible
+and held onto for unmake function
+
+MAYBE: eventually merge into position
+we are doing this now
+*/
+
+typedef struct {
+  //move
+  unsigned int move;
+  //which castles can be done
+  unsigned short castle;
+  //current enpassantable pawns
+  unsigned short enpassant;
+  //piece captured
+  unsigned short captured;
+} undo_list;
+
+
+typedef struct {
   //bitboards
   U64 boards[8];
   //squareboard
@@ -92,7 +113,10 @@ typedef struct
   unsigned short enpassant;
   //index for gamelist struct
   unsigned int index;
-  
+  //undo
+  undo_list undo[MAXMOVES];
+
+
 } position;
 
 

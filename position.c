@@ -52,6 +52,11 @@ void init_position(position *pos) {
   pos->castle = encode_castle(1, 1, 1, 1);
   pos->enpassant = encode_enpassant(0, 0);
   pos->index = 0;
+
+  pos->undo->move = 0;
+  pos->undo->castle = encode_castle(1, 1, 1, 1);
+  pos->undo->enpassant = encode_enpassant(0, 0);
+  pos->undo->captured = 0;
 }
 
 void parse(position *pos, char *fen) {
