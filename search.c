@@ -43,7 +43,7 @@ int isRepetition(position *pos) {
     //can eventually add a simplification to include 50 move rule
     for (int i = 0; i < pos->index - 1; i++) { 
         //need a way to compare old board vs new board
-        if (0) {
+        if (pos->hash_key == pos->undo[i].hash_key) {
             return 1;
         }
     }
@@ -60,6 +60,7 @@ int alphabeta(int alpha, int beta, int depth, position *pos) {
 
     move_list moves;
     moves = generate_moves(*pos);
+    printmoves(moves);
     
     int movenum = 0;
     int legal = 0;
@@ -71,6 +72,7 @@ int alphabeta(int alpha, int beta, int depth, position *pos) {
 
         //if move is illegal break/continue, else proceed
         if (!make(pos, moves.moves[m])) {
+            unmake(pos);
             continue;
         }
         

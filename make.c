@@ -17,8 +17,8 @@
 void make_quiet(position *pos, int source, int target) {
 
   //get source piece
-  int color = get_square_color(*pos, source);
-  int piece = get_square_piece(*pos, source);
+  int color = get_square_color(pos, source);
+  int piece = get_square_piece(pos, source);
 
   //remove source piece from source sq 
   pop_bit(pos->boards[color], source);
@@ -34,11 +34,11 @@ void make_quiet(position *pos, int source, int target) {
 void make_capture(position *pos, int source, int target) {
   
   //get source piece
-  int color = get_square_color(*pos, source);
-  int piece = get_square_piece(*pos, source);
+  int color = get_square_color(pos, source);
+  int piece = get_square_piece(pos, source);
 
   //get capture piece and save in gamelist
-  int capture = get_square_piece(*pos, target);
+  int capture = get_square_piece(pos, target);
   pos->undo[pos->index].captured = capture;
 
   //remove source piece from source sq
@@ -57,8 +57,8 @@ void make_capture(position *pos, int source, int target) {
 }
 
 void make_enpassant(position *pos, int source, int target) {
-  int color = get_square_color(*pos, source);
-  int piece = get_square_piece(*pos, source);
+  int color = get_square_color(pos, source);
+  int piece = get_square_piece(pos, source);
   //get enpassant sq
   int enpassant;
   if (color == white) {
@@ -88,8 +88,8 @@ void make_enpassant(position *pos, int source, int target) {
 }
 
 void make_quiet_promotion(position *pos, int source, int target, int promotion) {
-  int color = get_square_color(*pos, source);
-  int piece = get_square_piece(*pos, source);
+  int color = get_square_color(pos, source);
+  int piece = get_square_piece(pos, source);
   pop_bit(pos->boards[color], source);
   pop_bit(pos->boards[piece], source);
   set_bit(pos->boards[color], target);
@@ -98,9 +98,9 @@ void make_quiet_promotion(position *pos, int source, int target, int promotion) 
 }
 
 void make_capture_promotion(position *pos, int source, int target, int promotion) {  
-  int color = get_square_color(*pos, source);
-  int piece = get_square_piece(*pos, source);
-  int capture = get_square_piece(*pos, target);
+  int color = get_square_color(pos, source);
+  int piece = get_square_piece(pos, source);
+  int capture = get_square_piece(pos, target);
   pos->undo[pos->index].captured = capture;
   //remove source
   pop_bit(pos->boards[color], source);
@@ -158,8 +158,8 @@ void unmake_capture(position *pos, int source, int target) {
   //current state: source piece on target sq, capture piece absent
 
   //get source piece from target sq
-  int color = get_square_color(*pos, target);
-  int piece = get_square_piece(*pos, target);
+  int color = get_square_color(pos, target);
+  int piece = get_square_piece(pos, target);
 
   //get capture piece from memory
   int capture = pos->undo[pos->index].captured;
@@ -181,8 +181,8 @@ void unmake_capture(position *pos, int source, int target) {
 }
 
 void unmake_enpassant(position *pos, int source, int target) {
-  int color = get_square_color(*pos, target);
-  int piece = get_square_piece(*pos, target);
+  int color = get_square_color(pos, target);
+  int piece = get_square_piece(pos, target);
   //get enpassant sq
   int enpassant;
   if (color == white) {
@@ -214,8 +214,8 @@ void unmake_quiet_promotion(position *pos, int source, int target) {
   //current state: source piece gone(pawn), promotion piece on target sq
   
   //get source color and promotion piece from target sq
-  int color = get_square_color(*pos, target);
-  int piece = get_square_piece(*pos, target);
+  int color = get_square_color(pos, target);
+  int piece = get_square_piece(pos, target);
 
   //remove promotion piece off target sq
   pop_bit(pos->boards[color], target);
@@ -235,9 +235,9 @@ void unmake_capture_promotion(position *pos, int source, int target) {
   //promotion piece on target sq
 
   //get source color
-  int color = get_square_color(*pos, target);
+  int color = get_square_color(pos, target);
   //get promtion piece
-  int piece = get_square_piece(*pos, target);
+  int piece = get_square_piece(pos, target);
   //get capture piece from memory
   int capture = pos->undo[pos->index].captured;
 
@@ -317,6 +317,8 @@ int make(position *pos, int move) {
   pos->undo[pos->index].enpassant = pos->enpassant;
   pos->undo[pos->index].castle = pos->castle;
 
+  pos->undo[pos->index].hash_key = pos->hash_key;
+
   //keep track of enpassant through move
   int enpassant = 0;
 
@@ -324,7 +326,7 @@ int make(position *pos, int move) {
 
   //change castling rights
   //if rook or king move
-  int piece = get_square_piece(*pos, source);
+  int piece = get_square_piece(pos, source);
   if ((piece == king)||(piece == rook)) {
     int wk = decode_castle_wk(pos->castle);
     int bk = decode_castle_bk(pos->castle);
@@ -364,7 +366,7 @@ int make(position *pos, int move) {
     pos->castle = encode_castle(wk, wq, bk, bq);
   }
   //rook is captured
-  piece = get_square_piece(*pos, target);
+  piece = get_square_piece(pos, target);
   //printf("piece = %d", piece);
   if (piece == rook) {
     int wk = decode_castle_wk(pos->castle);
@@ -488,6 +490,9 @@ int make(position *pos, int move) {
     illegal = 1;
   }
   
+
+  //set hash
+  pos->hash_key = hash_board(pos);
   //switch turn, set new enpassant, and increment index
   pos->turn = get_opposite(pos->turn);
   pos->enpassant = enpassant;

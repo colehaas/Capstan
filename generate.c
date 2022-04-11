@@ -16,29 +16,7 @@
 \*********************/
 
 void printpiecepretty(int color, int piece) {
-    char piece_array[12] = "pnkqrbPNKQRB";
-    
-/*     switch (piece) {
-    case(pawn):
-      x = 'p';
-      break;
-    case(horse):
-      x = 'n';
-      break;
-    case(king):
-      x = 'k';
-      break;
-  case(queen):
-      x = 'q';
-      break;
-  case(rook):
-    x = 'r';
-    break;
-  case(bishop):
-    x = 'b';
-    break;
-  } */
-
+  char piece_array[12] = "pnkqrbPNKQRB";
   int index = (color*6)+(piece-2);
   char x = piece_array[index];
 
@@ -144,6 +122,8 @@ void printmoves(move_list moves) {
       printf("\n");
   }
 }
+
+//int parse_move()
 
 int promotion_piece(int y, int z) {
   if (y == 0) {

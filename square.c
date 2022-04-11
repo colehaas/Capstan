@@ -17,24 +17,17 @@
  * piece = (index % 8)
 */
 
+
 int square_index(int color, int piece) {
   return ((color * 8) + piece);
 }
 
-int square_color(int index) {
-  return (index / 8);
+int get_square_color(position *pos, int sq) {
+  return pos->square[sq] / 8;
 }
 
-int square_piece(int index) {
-  return (index % 8);
-}
-
-int get_square_color(position position, int sq) {
-  return square_color(position.square[sq]);
-}
-
-int get_square_piece(position position, int sq) {
-  return square_piece(position.square[sq]);
+int get_square_piece(position *pos, int sq) {
+  return pos->square[sq] % 8;
 }
 
 
@@ -106,7 +99,7 @@ void move_square(position *position, int source, int target) {
 }
 
 void promotion_square(position *position, int source, int target, int piece) {
-  int color = square_color(position->square[source]);
+  int color = get_square_color(position, source);
   int index = square_index(color, piece);
   position->square[target] = index;
   position->square[source] = 0;

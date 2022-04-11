@@ -255,14 +255,18 @@ void printpos(position pos) {
 //returns hash value from squareboard
 //?is squareboard the best option for this?
 //incremental hashes during make move
-U64 hash_board(position pos) {
+U64 hash_board(position *pos) {
     U64 hash = 0x0;
     int color, piece, index; 
     
     //add all 64 squares to hasher
     for (int sq = 0; sq < 64; sq++) {
-        color = get_square_color(pos, sq);
-        piece = get_square_piece(pos, sq);
+        //sort out position square source files
+        //maybe square not including position
+        //color = get_square_color(pos, sq);
+        //piece = get_square_piece(pos, sq);
+        color = pos->square[sq] / 8;
+        piece = pos->square[sq] % 8;
         index = (color * 6) + piece;
         hash |= hash_values[index][sq];     
     }
@@ -270,18 +274,18 @@ U64 hash_board(position pos) {
     //add 4 castling rights, 1 turn, and 8 enpassant files to hasher
     
     //get turn from pos argument
-    unsigned short turn = pos.turn;
+    unsigned short turn = pos->turn;
     if (turn) hash |= hash_values[12][0];
 
     //get castling rights from pos argument 
-    unsigned short castle = pos.castle;
+    unsigned short castle = pos->castle;
     if (decode_castle_wk(castle)) hash |= hash_values[12][1];
     if (decode_castle_wq(castle)) hash |= hash_values[12][2];
     if (decode_castle_bk(castle)) hash |= hash_values[12][3];
     if (decode_castle_bq(castle)) hash |= hash_values[12][4];
 
      //get enpassant from pos argument
-     unsigned short enpassant = pos.enpassant;
+     unsigned short enpassant = pos->enpassant;
      if (decode_enpassant_flag(enpassant)) {
         int offset = decode_enpassant_rank(enpassant);
         hash |= hash_values [12][5 + offset];

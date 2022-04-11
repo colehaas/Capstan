@@ -88,12 +88,17 @@ typedef struct {
 } hash_table;
 
 typedef struct {
+  
   //bitboards
   U64 boards[8];
   //squareboard
-  unsigned int square[64];  
+  unsigned int square[64]; 
+
   //hash key
   U64 hash_key;
+  //hash table
+  hash_table table;
+
   //color to move
   unsigned short turn;
   //which castles can be done
@@ -102,10 +107,10 @@ typedef struct {
   unsigned short enpassant;
   //number of plys and index for undolist
   unsigned int index;
+  
   //undo list for unmake
   undo_list undo[MAXMOVES];
-  //hash table
-  hash_table table;
+
 
 } position;
 
