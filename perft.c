@@ -16,37 +16,37 @@ U64 perft_enpassant(int move) {
 
 void perft_test(char *in, int count, int depth) {
 
-  init_attack();
+	init_attack();
 
-  size_t buffer_size = 256;
-  size_t line_size;
-  size_t ptr_size;
+	size_t buffer_size = 256;
+	size_t line_size;
+	size_t ptr_size;
 
-  FILE *file = fopen(in, "r");
-  char *line = (char *) malloc(buffer_size * sizeof(char));
+	FILE *file = fopen(in, "r");
+	char *line = (char *) malloc(buffer_size * sizeof(char));
   
-  for (int c = 0; c < count; c++) {
-    line_size = getline(&line, &buffer_size, file);
-    //printf("%s", line);
+for (int c = 0; c < count; c++) {
+	line_size = getline(&line, &buffer_size, file);
+	//printf("%s", line);
 
-    char delim[] = ",";
+	char delim[] = ",";
 
-    //first call for strtok
-    //get fen
-    char *ptr = strtok(line, delim);
-    ptr_size = strlen(ptr) + 1;
-    char *fen = malloc(ptr_size);
-    strcpy(fen, ptr);
-    //printf("\n%s", fen);
-    
-    U64 expected[depth];
-    for (int d = 0; d < depth; d++) {
-      if (ptr != NULL) {
-        ptr = strtok(NULL, delim);
-        expected[d] = (U64) atoi(ptr);
-      }
-      else return;
-    }
+	//first call for strtok
+	//get fen
+	char *ptr = strtok(line, delim);
+	ptr_size = strlen(ptr) + 1;
+	char *fen = malloc(ptr_size);
+	strcpy(fen, ptr);
+	//printf("\n%s", fen);
+
+	U64 expected[depth];
+	for (int d = 0; d < depth; d++) {
+		if (ptr != NULL) {
+			ptr = strtok(NULL, delim);
+			expected[d] = (U64) atoi(ptr);
+		}
+		else return;
+	}
 
     //set position
     position pos;
@@ -63,7 +63,7 @@ void perft_test(char *in, int count, int depth) {
     parse(&pos, fen);
     bb_to_square(&pos);
     position position = pos;
-/*     //print position
+    /*     //print position
     printpos(pos);
     printgb(pos);
 
@@ -72,6 +72,7 @@ void perft_test(char *in, int count, int depth) {
       printf("\nexpected : %d", expected[d]);
       printf("\nactual   : %lld", perft(&pos, game, d+1));
     } */
+
     U64 p;
     for (int d = 0; d < depth; d++) {
       pos = position;

@@ -38,6 +38,18 @@ int searchmin(position *pos, int depth, int min, int max) {
     return x;
 }
 
+int isRepetition(position *pos) {
+    //comparing current board position against all previous positions
+    //can eventually add a simplification to include 50 move rule
+    for (int i = 0; i < pos->index - 1; i++) { 
+        //need a way to compare old board vs new board
+        if (0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 int alphabeta(int alpha, int beta, int depth, position *pos) {
     
     //good place to add a node counter
@@ -52,28 +64,40 @@ int alphabeta(int alpha, int beta, int depth, position *pos) {
     int movenum = 0;
     int legal = 0;
     int oldalpha = alpha;
-    int bestmove = 0;
-    int score = -100000;
+    int best_move = 0;
+    int score = -INFINITE;
 
     for (int m = 0; m < moves.count; m++) {
 
-        //an additional place where we could check legal moves
+        //if move is illegal break/continue, else proceed
+        if (!make(pos, moves.moves[m])) {
+            continue;
+        }
+        
 
-        score = -alphabeta(-beta, -alpha, depth-1, moves.moves[m]);
+        score = -alphabeta(-beta, -alpha, depth-1, pos);
+        unmake(pos);
 
         if (score > alpha) {
             if (score >= beta) {
                 return beta;
             }
             alpha = score;
-            bestmove = moves.moves[m];
+            best_move = moves.moves[m];
         }
     }
 
-    return 0;
+    return best_move;
 
 }
 
-int search() {
-    return 0;
+int search(position *pos) {
+    int best_move = 0;
+    int best_score = -INFINITE;
+    int currrent_depth = 3;
+    
+    if (best_move == 0) {
+        best_move = alphabeta(-INFINITE, INFINITE, currrent_depth, pos);
+    }
+    return best_move;
 }

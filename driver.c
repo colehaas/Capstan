@@ -35,7 +35,7 @@ int main() {
     //get position from fen
     //parse(&pos, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
 
-    parse(&pos, "r4B2/p1nr1kp1/1pN1pn1p/3p1p2/2PP4/1PN3PP/P4PK1/2RR4 b - - 0 24");
+    parse(&pos, "5r2/p1nr1kp1/1pN1pn1p/3p1p2/2PP4/1PN3PP/P4PK1/2RR4 w - - 0 25");
     bb_to_square(&pos);
 
     undo_list game[256];
@@ -47,7 +47,9 @@ int main() {
     printf("\n\nvalue: %d", val);
     //play(&pos, game);
 
-    alphabeta(-30000,30000,3,&pos);
+    int best_move = search(&pos);
+    printf("\n\nbest_move: ");
+    printmove(best_move);
 /*
     printf("\n\nperft results:\n\n");
     for (int i = 1; i < 6; i++) {
