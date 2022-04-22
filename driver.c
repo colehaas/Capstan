@@ -38,6 +38,8 @@ int main() {
     parse(&pos, "5r2/p1nr1kp1/1pN1pn1p/3p1p2/2PP4/1PN3PP/P4PK1/2RR4 w - - 0 25");
     bb_to_square(&pos);
 
+    search_info *info;
+
     //undo_list game[256];
     //move_list moves;
     
@@ -46,8 +48,9 @@ int main() {
     int val = value(pos);
     printf("\n\nvalue: %d", val);
     //play(&pos, game);
+    
 
-    int best_move = search(&pos);
+    int best_move = search(&pos, info);
     printf("\n\nbest_move: ");
     printmove(best_move);
 /*

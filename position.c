@@ -306,7 +306,7 @@ void store_node(position *pos, int move) {
 
 }
 
-// 
+ 
 int probe_move(position *pos) {
 	//get hashing index
 	int index = pos->hash_key % pos->table.num_nodes;
@@ -317,12 +317,5 @@ int probe_move(position *pos) {
 	return 0;
 }
 
-
-
-//add to hash
-//add square picece color
-//add enpassant
-//add castling rights(I guess maybe for going backwards)
-//add 
 
 

@@ -13,6 +13,7 @@
 
 #include "bitboards.h"
 
+
 #define MAXMOVES 256
 #define INFINITE 100000
 
@@ -88,28 +89,34 @@ typedef struct {
 } hash_table;
 
 typedef struct {
-  
-  //bitboards
-  U64 boards[8];
-  //squareboard
-  unsigned int square[64]; 
+	U64 start_time;
+	U64 stop_time;
+	int stopped;
+} search_info;
 
-  //hash key
-  U64 hash_key;
-  //hash table
-  hash_table table;
+typedef struct {
 
-  //color to move
-  unsigned short turn;
-  //which castles can be done
-  unsigned short castle;
-  //current enpassantable pawns
-  unsigned short enpassant;
-  //number of plys and index for undolist
-  unsigned int index;
-  
-  //undo list for unmake
-  undo_list undo[MAXMOVES];
+	//bitboards
+	U64 boards[8];
+	//squareboard
+	unsigned int square[64]; 
+
+	//hash key
+	U64 hash_key;
+	//hash table
+	hash_table table;
+
+	//color to move
+	unsigned short turn;
+	//which castles can be done
+	unsigned short castle;
+	//current enpassantable pawns
+	unsigned short enpassant;
+	//number of plys and index for undolist
+	unsigned int index;
+
+	//undo list for unmake
+	undo_list undo[MAXMOVES];
 
 
 } position;
@@ -126,5 +133,6 @@ extern U64 hash_values[13][64];
 
 U64 xorshift(U64);
 void init_hash();
+U64 hash_board(position *pos);
 
 #endif

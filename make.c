@@ -316,7 +316,6 @@ int make(position *pos, int move) {
   pos->undo[pos->index].move = move;
   pos->undo[pos->index].enpassant = pos->enpassant;
   pos->undo[pos->index].castle = pos->castle;
-
   pos->undo[pos->index].hash_key = pos->hash_key;
 
   //keep track of enpassant through move
@@ -492,6 +491,7 @@ int make(position *pos, int move) {
   
 
   //set hash
+  // eventually switch to an update and undo hash
   pos->hash_key = hash_board(pos);
   //switch turn, set new enpassant, and increment index
   pos->turn = get_opposite(pos->turn);
