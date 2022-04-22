@@ -1,44 +1,28 @@
 #include "search.h"
 
-int searchmax(position *pos, int depth, int min, int max) {
-    if (!depth) return evaluation(*pos);
-    int x, y;
-    //x is the starting beta value
-    x = min;
-    //generate all moves and loop through moves
-    //probably shoudnt actually look through all of the moves at this time
-    move_list moves = generate_moves(*pos);
-
-    for (int m = 0; m < moves.count; m++) { 
-        y = searchmin(moves.moves[m], depth - 1, x, max);
-        if (y > x) x = y;
-        if (x > max) return max;
+static int is_repetition(position *pos) {
+    //comparing current board position against all previous positions
+    //can eventually add a simplification to include 50 move rule
+    for (int i = 0; i < pos->index - 1; i++) { 
+        //need a way to compare old board vs new board
+        if (pos->hash_key == pos->undo[i].hash_key) {
+            return 1;
+        }
     }
-
-    return x;
+    return 0;
 }
 
-int searchmin(position *pos, int depth, int min, int max) {
-    if (!depth) return evaluation(*pos);
-    int x, y;
-    //x is the starting alpha value
-    x = max;
-    //generate all moves
-    //probably shoudnt actually look through all of the moves at this time
-    //
-    move_list moves = generate_moves(*pos);
-
-
-    for (int m = 0; m < moves.count; m++) { 
-        y = searchmax(moves.moves[m], depth - 1, min, x);
-        if (y < x) x = y;
-        if (x < min) return min;
+static void checkup(search_info *info) {
+    if (ns() > info->stop_time) {
+        info->stopped = 1;
     }
-
-    return x;
 }
 
-int alphabeta(int alpha, int beta, int depth, position *pos) {
+static void clear_search(position *pos, search_info *info) {
+    info->stopped = 0;
+}
+
+static int alphabeta(int alpha, int beta, int depth, position *pos, search_info *info) {
     
     //good place to add a node counter
 
@@ -48,32 +32,46 @@ int alphabeta(int alpha, int beta, int depth, position *pos) {
 
     move_list moves;
     moves = generate_moves(*pos);
+    printmoves(moves);
     
     int movenum = 0;
     int legal = 0;
     int oldalpha = alpha;
-    int bestmove = 0;
-    int score = -100000;
+    int best_move = 0;
+    int score = -INFINITE;
 
     for (int m = 0; m < moves.count; m++) {
 
-        //an additional place where we could check legal moves
+        //if move is illegal break/continue, else proceed
+        if (!make(pos, moves.moves[m])) {
+            unmake(pos);
+            continue;
+        }
+        
 
-        score = -alphabeta(-beta, -alpha, depth-1, moves.moves[m]);
+        score = -alphabeta(-beta, -alpha, depth-1, pos, info);
+        unmake(pos);
 
         if (score > alpha) {
             if (score >= beta) {
                 return beta;
             }
             alpha = score;
-            bestmove = moves.moves[m];
+            best_move = moves.moves[m];
         }
     }
 
-    return 0;
+    return best_move;
 
 }
 
-int search() {
-    return 0;
+int search(position *pos, search_info *info) {
+    int best_move = 0;
+    int best_score = -INFINITE;
+    int currrent_depth = 3;
+    
+    if (best_move == 0) {
+        best_move = alphabeta(-INFINITE, INFINITE, currrent_depth, pos, info);
+    }
+    return best_move;
 }

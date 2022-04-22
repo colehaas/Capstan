@@ -15,6 +15,7 @@
 
 
 #define MAXMOVES 256
+#define INFINITE 100000
 
 //colors & pieces
 enum {
@@ -25,18 +26,15 @@ enum {
   p, h, k, q, r, b, P, H, K, Q, R, B
 };
 
-
+//probably not useful
+// enum rank { a, b, c, d, e, f, g, h};
 
 /***** CASTLING ENCODING FORMAT ******\
-  
   wk: white king
   wq: white queen
   bk: black king
   bq: black queen
-
 \*************************************/
-
-
 
 //castle encoding macros
 #define encode_castle(whiteking, whitequeen, blackking, blackqueen) \
@@ -48,31 +46,11 @@ enum {
 #define decode_castle_bk(castle) ((castle & 4) >> 2)
 #define decode_castle_bq(castle) ((castle & 8) >> 3)
 
-/* void encode_castle(unsigned int wk, unsigned int wq, unsigned int bk, unsigned int bq);
-void decode_castle_wk(int castle);
-void decode_castle_wq(int castle);
-void decode_castle_bk(int castle);
-void decode_castle_bq(int castle); */
-
-
 /***** ENPASSANT ENCODING FORMAT *****\
   f: flag
   r: rank
   frrr
 \*************************************/
-
-//probably not useful
-/* enum rank
-{
-    a,
-    b,
-    c,
-    d,
-    e,
-    f,
-    g,
-    h
-}; */
 
 //enpassant encoding macros
 #define encode_enpassant(flag, rank) (flag) | (rank << 1)
@@ -80,17 +58,13 @@ void decode_castle_bq(int castle); */
 #define decode_enpassant_rank(enpassant) ((enpassant & 0xE) >> 1)
 
 
-/*
-castle, enpassant, captured are irreversible
-and held onto for unmake function
 
-MAYBE: eventually merge into position
-we are doing this now
-*/
-
+// this struct stores the info necessary to unmake or undo one move. 
 typedef struct {
   //move
   unsigned int move;
+  //hash key
+  U64 hash_key;
   //which castles can be done
   unsigned short castle;
   //current enpassantable pawns
@@ -101,20 +75,48 @@ typedef struct {
 
 
 typedef struct {
-  //bitboards
-  U64 boards[8];
-  //squareboard
-  unsigned int square[64];  
-  //color to move
-  unsigned short turn;
-  //which castles can be done
-  unsigned short castle;
-  //current enpassantable pawns
-  unsigned short enpassant;
-  //index for gamelist struct
-  unsigned int index;
-  //undo
-  undo_list undo[MAXMOVES];
+    U64 hash_key;
+    int best_move;
+    //int depth
+    //int score
+    //int node_type
+    //int age
+} hash_node;
+
+typedef struct {
+    hash_node *hash;
+    int num_nodes;
+} hash_table;
+
+typedef struct {
+	U64 start_time;
+	U64 stop_time;
+	int stopped;
+} search_info;
+
+typedef struct {
+
+	//bitboards
+	U64 boards[8];
+	//squareboard
+	unsigned int square[64]; 
+
+	//hash key
+	U64 hash_key;
+	//hash table
+	hash_table table;
+
+	//color to move
+	unsigned short turn;
+	//which castles can be done
+	unsigned short castle;
+	//current enpassantable pawns
+	unsigned short enpassant;
+	//number of plys and index for undolist
+	unsigned int index;
+
+	//undo list for unmake
+	undo_list undo[MAXMOVES];
 
 
 } position;
@@ -124,5 +126,13 @@ void init_boards(position *position);
 void init_position(position *position);
 void parse(position *pos, char *fen);
 void printpos(position pos);
+
+//from hash.h
+
+extern U64 hash_values[13][64];
+
+U64 xorshift(U64);
+void init_hash();
+U64 hash_board(position *pos);
 
 #endif

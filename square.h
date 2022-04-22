@@ -18,11 +18,10 @@
 
 
 int square_index(int color, int piece);
-int square_color(int index);
-int square_piece(int index);
 
-int get_square_color(position position, int sq);
-int get_square_piece(position position, int sq);
+
+int get_square_color(position *pos, int sq);
+int get_square_piece(position *pos, int sq);
 
 //super slow
 int get_color_sq(position position, int sq);
